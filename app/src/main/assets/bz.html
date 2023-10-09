@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset=utf-8>
+<title>Android: WebView</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css" integrity="sha384-PsH8R72JQ3SOdhVi3uxftmaW6Vc51MKb0q5P2rRUpPvrszuE4W1povHYgTpBfshb" crossorigin="anonymous">
+
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<link rel="stylesheet" href="//developer.alexanderklimov.ru/blocks/css/custom.css">
+    
+<link rel="icon" href="//developer.alexanderklimov.ru/favicon.ico" type="image/x-icon" />
+<link rel="shortcut icon" href="//developer.alexanderklimov.ru/favicon.ico" type="image/x-icon" />
+
+
+<style type="text/css">
+body {
+    padding-top: 60px;
+    padding-bottom: 10px;
+}
+
+#cat {
+    position: fixed;
+    bottom: 0;
+    right: 220px;
+    width: 146px;
+    height: 55px;
+}
+
+#cat:hover .cat-itself {
+  height:103px;
+}
+
+#cat:hover .cat-eye {
+  display:none !important
+}
+
+.cat-paws {
+    position: absolute;
+    right: 0;
+    bottom: -4px;
+    width: 132px;
+    height: 33px;
+    z-index: 2;
+    background: url(//developer.alexanderklimov.ru/blocks/footer-cat-paws.png) no-repeat right bottom;
+}
+
+.cat-itself {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 125px;
+    height: 55px;
+    z-index: 0;
+    background: url(//developer.alexanderklimov.ru/blocks/footer-cat-itself.png) no-repeat;
+    transition: all .1s .1s ease-out;
+}
+
+.cat-itself-wrap {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+.cat-eye {
+    position: absolute;
+    display: none;
+    width: 28px;
+    height: 28px;
+    background: url(//developer.alexanderklimov.ru/blocks/footer-cat-eye.png);
+}
+
+#cat-eye-left {
+    left: 25px;
+    top: 23px;
+}
+
+#cat-eye-right {
+    left: 74px;
+    top: 23px;
+}
+
+.cat-eyeball {
+    position: absolute;
+    left: 7.5px;
+    top: 7.5px;
+    width: 13px;
+    height: 13px;
+    background: url(//developer.alexanderklimov.ru/blocks/footer-cat-eyeball.png);
+}
+</style>
+
+<link href="https://fonts.googleapis.com/css?family=Pattaya" rel="stylesheet">
+
+<!--
+<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+-->   
+</head>
+
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark fixed-top bg-primary">
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavAltMarkup" aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+  <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+      <div class="navbar-nav">
+        <a class="nav-item nav-link active" href="//developer.alexanderklimov.ru/android/">Android <span class="sr-only">(current)</span></a>
+        <a class="nav-item nav-link " href="//developer.alexanderklimov.ru/python/">Python</a>
+        <a class="nav-item nav-link " href="//developer.alexanderklimov.ru/dotnet/">C#/Visual Basic</a>
+        <a class="nav-item nav-link " href="//developer.alexanderklimov.ru/windowsphone/wp.php">Windows Phone</a>
+        <a class="nav-item nav-link " href="//developer.alexanderklimov.ru/php">PHP</a>
+        <a class="nav-item nav-link " href="//developer.alexanderklimov.ru/arduino">Arduino</a>
+        <a class="nav-item nav-link " href="//android-klimov.blogspot.ru/">Блог</a>
+
+      </div>
+        <div class="navbar-text ml-auto mt-0 p-0">
+          <input type="checkbox" id="switch" class="checkbox"  onclick="myFunction()" /> 
+          <label for="switch" class="toggle"></label> 
+        </div>
+    <div class="navbar-text p-2">
+
+      <a data-toggle="modal" href="#myModal" class="navbar-link"><i class="material-icons orange600" title="Котаны, сюда!">pets</i></a>
+    </div>
+  </div>
+</nav>
+
+<div class="container-fluid">
+<div class="row">
+    <div class="col-md-4">
+        <p class="h6" style="font-family: 'Pattaya', sans-serif; font-size: 2.5em; color: #ff8000;">Освой Android играючи</p>
+
+		<p class="text-center"><a style="font-size: 2.0em; color: red;" href="//developer.alexanderklimov.ru/">Сайт Александра Климова</a></p>
+
+    </div><!--/span-->
+
+	<div class="col-md-1">
+	<img src="//developer.alexanderklimov.ru/blocks/header-cat.png" alt="Шкодим">
+	</div>
+    
+	<div class="col-md-5">
+        <p style="color:green; font-style: italic; font-size: small;">
+		/* Моя кошка замечательно разбирается в программировании. Стоит мне объяснить проблему ей - и все становится ясно. */<br>John Robbins, Debugging Applications, Microsoft Press, 2000
+		</p>
+    </div>
+
+</div><!--/row-->
+</div><noindex>
+<!-- Top.Mail.Ru counter -->
+<script type="text/javascript">
+var _tmr = window._tmr || (window._tmr = []);
+_tmr.push({id: "228158", type: "pageView", start: (new Date()).getTime()});
+(function (d, w, id) {
+  if (d.getElementById(id)) return;
+  var ts = d.createElement("script"); ts.type = "text/javascript"; ts.async = true; ts.id = id;
+  ts.src = "https://top-fwz1.mail.ru/js/code.js";
+  var f = function () {var s = d.getElementsByTagName("script")[0]; s.parentNode.insertBefore(ts, s);};
+  if (w.opera == "[object Opera]") { d.addEventListener("DOMContentLoaded", f, false); } else { f(); }
+})(document, window, "tmr-code");
+</script>
+<noscript><div><img src="https://top-fwz1.mail.ru/counter?id=228158;js=na" style="position:absolute;left:-9999px;" alt="Top.Mail.Ru" /></div></noscript>
+<!-- /Top.Mail.Ru counter -->
+</noindex>	
+<div class="container-fluid">
+    
+	<div class="row">
+        <!--левое меню -->
+		<div class="col-md-2 well-lg">
+            <div class="sidebar panel panel-default">
+            <div class="list group">
+  <a class="list-group-item list-group-item-action " href="//developer.alexanderklimov.ru/android/index.php">Главная</a>
+  <a class="list-group-item list-group-item-action " href="//developer.alexanderklimov.ru/android/theory/">Теория</a>
+  <a class="list-group-item list-group-item-action active" href="//developer.alexanderklimov.ru/android/views/">Palette</a>
+  <a class="list-group-item list-group-item-action " href="//developer.alexanderklimov.ru/android/catshop/">Котошоп</a>
+  <a class="list-group-item list-group-item-action " href="//developer.alexanderklimov.ru/android/animation/">Анимация</a>
+  <a class="list-group-item list-group-item-action " href="//developer.alexanderklimov.ru/android/sqlite/">SQLite</a>
+  <!--
+  <a class="list-group-item list-group-item-action " href="http://developer.alexanderklimov.ru/android/opengles/">OpenGL ES</a>
+  -->
+  <a class="list-group-item list-group-item-action " href="//developer.alexanderklimov.ru/android/library/">Библиотеки</a>
+  <a class="list-group-item list-group-item-action " href="//developer.alexanderklimov.ru/android/games/">Игры</a>
+  
+  <a class="list-group-item list-group-item-action " href="//developer.alexanderklimov.ru/android/compose/">Compose</a>
+  
+  <a class="list-group-item list-group-item-action " href="//developer.alexanderklimov.ru/android/wear/">Wear</a>
+  <!--
+  <a class="list-group-item list-group-item-action " href="http://developer.alexanderklimov.ru/android/things/">Android Things</a>
+  -->
+  <a class="list-group-item list-group-item-action " href="//developer.alexanderklimov.ru/android/emulator/">Эмулятор</a>
+  <a class="list-group-item list-group-item-action " href="//developer.alexanderklimov.ru/android/studio/">Android Studio</a>
+  <!--
+  <a class="list-group-item list-group-item-action " href="http://developer.alexanderklimov.ru/android/rx/">RxJava</a></li>
+  -->
+  <a class="list-group-item list-group-item-action " href="//developer.alexanderklimov.ru/android/tips-android.php">Советы</a>
+  <a class="list-group-item list-group-item-action " href="//developer.alexanderklimov.ru/android/articles-android.php">Статьи</a>
+  <a class="list-group-item list-group-item-action " href="//developer.alexanderklimov.ru/android/books.php">Книги</a>
+  <a class="list-group-item list-group-item-action " href="//developer.alexanderklimov.ru/android/java/java.php">Java</a>
+  <a class="list-group-item list-group-item-action " href="//developer.alexanderklimov.ru/android/kotlin/">Kotlin</a>
+  <a class="list-group-item list-group-item-action " href="//developer.alexanderklimov.ru/android/design/">Дизайн</a>
+  <a class="list-group-item list-group-item-action " href="//developer.alexanderklimov.ru/android/debug/">Отладка</a>
+  
+  <a class="list-group-item list-group-item-action " href="//developer.alexanderklimov.ru/android/deprecated/">DepreCATed</a>
+  
+  <a class="list-group-item list-group-item-action " href="//developer.alexanderklimov.ru/android/opensource.php">Open Source</a>
+  <a class="list-group-item list-group-item-action " href="//developer.alexanderklimov.ru/android/links.php">Полезные ресурсы</a>
+</div>            </div><!--/.well -->
+        </div><!--/span-->
+
+        <div class="col-md-8">
+
+		<div class="row">
+            <div class="col-md-12">
+			
+			<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+		<h5 class="modal-title" id="myModalLabel">Котаны, читайте на здоровье!</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p>Статья проплачена кошками - всемирно известными производителями котят.</p>
+        <p>Если статья вам понравилась, то можете <a href="https://developer.alexanderklimov.ru/donate.php">поддержать проект</a>.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" data-dismiss="modal">Закрыть</button>
+      </div>
+    </div>
+  </div>
+</div>      
+<h1 class="text-warning">WebView</h1>
+
+<p>
+<a href="#local">Загружаем локальные страницы и картинки</a><br>
+<a href="#loaddata">Загружаем данные при помощи loadData() и loadDataWithBaseURL()</a></br>
+<a href="#encoding">Проблемы с кодировкой</a><br>
+<a href="#methods">Методы</a><br>
+<a href="#zoom">Используем зум для просмотра</a><br>
+<a href="#transparent">Прозрачность</a><br>
+<a href="#settings">Настройки</a><br>
+<a href="#dark">Ночной режим</a><br>
+</p>
+
+<p class="lead"><b>WebView</b> — это компонент, который позволяет встраивать веб-страницы в приложения, своеобразный мини-браузер. Находится в разделе <b>Containers</b>.</p>
+
+<p>В старых версиях Android <b>WebView</b> использовал движок <b>WebKit</b>. В Android 4.4 он стал использовать движок <b>Chromium</b> или <b>Blink</b>. В Android 5 появилось отдельное приложение <b>System WebView</b>, которое можно скачать из Play Market. Такое разделение позволило обновлять движок без обновления системы. На этом приключения не закончились. В Android 7.0 уже используется движок <b>Chrome</b>, а если этого браузера на устройстве нет, то используется <b>System WebView</b>. Подобные выкрутасы не прошли даром, программисты часто жалуются, что какой-то кусок кода не работает. Приходится проверять работу на разных устройствах.</p>
+
+<p>Надеюсь, вы уже познакомились с <a href="../mybrowser.php">базовым примером по созданию собственного браузера</a>. Рассмотрим дополнительные возможности элемента <b>WebView</b>.</p>
+
+<h2 class="text-warning" id="local">Загружаем локальные страницы и картинки</h2>
+
+<p>Если вы хотите загружать в <b>WebView</b> страницы не из интернета, а со своего приложения, то разместите нужные файлы в папке <a href="https://developer.alexanderklimov.ru/android/theory/assets.php">assets</a>, например, <b>assets/mypage.html</b>. Доступ к файлу вы можете получить через конструкцию <b>file://android_asset</b>:</p>
+
+<pre class="bg-light"><code class="java">
+webView = findViewById(R.id.mybrowser);
+      
+webView.loadUrl("file:///android_asset/mypage.html");
+</code></pre>
+
+<p>Аналогично поступаем с картинками, которые встречаются в html-файле</p>
+
+<pre class="bg-light"><code class="java">
+&lt;img src=&quot;file:///android_asset/myimage.gif&quot;&gt;
+</code></pre>
+
+<p>Также можно загрузить файл из папки <b>res/raw</b>:</p>
+
+<pre class="bg-light"><code class="java">
+webView.loadUrl("file:///android_res/raw/cat.html");
+</code></pre>
+
+<p>Если картинка находится на внешнем накопителе, то попробуйте вариант:</p>
+
+<pre class="bg-light"><code class="java">
+WebView webView = findViewById(R.id.webView);
+String imageName = "cutecat.png";
+
+String catUrl = "file://"
+        + Environment.getExternalStorageDirectory().getAbsolutePath()
+                .toString() + "/" + imageName;
+webView.loadUrl(catUrl);
+</code></pre>
+
+<p>Недавно наткнулся на фрагмент кода, где нужно добавить несколько новых настроек для работы с файлами. Пример для Kotlin.</p>
+
+<pre class="bg-light"><code>
+val webView = findViewById(R.id.webView)
+// Enable the WebView to access content through file: URLs
+webView.settings.apply {
+    allowFileAccess = true
+    allowFileAccessFromFileURLs = true
+    allowUniversalAccessFromFileURLs = true
+}
+</code></pre>
+
+<h2 class="text-warning" id="loaddata">Загружаем данные при помощи loadData() и loadDataWithBaseURL()</h2>
+
+<p>Данные можно загрузить с помощью метода <b>loadData()</b>:</p>
+
+<pre class="bg-light"><code class="java">
+String htmlText = &quot;&lt;html&gt;&lt;body&gt;Percent test: 100% &lt;/body&gt;&lt;/html&gt;&quot;;
+WebView webView = findViewById(R.id.webView);
+webView.loadData(htmlText, &quot;text/html&quot;, &quot;en_US&quot;);
+</code></pre>
+
+<p>Если текст простой, то этот способ подойдёт. Но в данном примере встречается символ процента, который относится к спецсимволам и часть текста может оказаться недоступной. Если в тексте встречаются подобные символы, то лучше использовать метод <b>loadDataWithBaseURL()</b>:</p>
+
+<pre class="bg-light"><code class="java">
+webView.loadDataWithBaseURL(null, htmlText, "text/html", "en_US", null);
+</code></pre>
+
+<p>Если вам приходится использовать <b>loadData()</b>, то спецсимволы можно заменить при помощи метода <b>replace()</b>:</p>
+
+<pre class="bg-light"><code class="java">
+String webData = stringBuffer.toString(); // поступающие данные
+   
+webData = webData.replace("#", "%23");
+webData = webData.replace("%", "%25");
+webData = webData.replace("\\", "%27");
+webData = webData.replace("?", "%3f");
+
+webView.loadData(webData, "text/html", "UTF-8");
+</code></pre>
+
+<h2 class="text-warning" id="encoding">Проблемы с кодировкой</h2>
+
+<p>У меня есть программа в Google Play, использующая <b>WebView</b>. К моему удивлению, некоторые пользователи жаловались, что текст нечитаем, так как они видят только кракозябры. Особенно много жалоб было от пользователей с планшетами. Оказалось, что проблема довольна распространённая и обсуждается на форумах. Танцы с бубнами (установка явной кодировки UTF-8) не помогают. Нашёл один ответ, который у некоторых заработал, на всякий случай я его здесь оставлю.</p>
+
+<pre class="bg-light"><code class="java">
+// перед загрузкой данных (load...)
+WebSettings settings = mWebView.getSettings();
+settings.setDefaultTextEncodingName("utf-8");
+</code></pre>
+
+<p>Но я рекомендую просто использовать метод <b>loadDataWithBaseURL()</b>. Работает стабильно.</p>
+
+<h2 class="text-warning" id="methods">Методы</h2>
+
+<p>У <b>WebView</b> есть множество методов, которые позволяют добиваться полной функциональности как у обычного браузера - обновить страницу, перейти на предыдущую страницу и т.д. Часть методов представлена ниже:</p>
+
+<ul>
+<li>reload()</li>
+<li>goForward()</li>
+<li>goBack()</li>
+</ul>
+
+<h2 class="text-warning" id="zoom">Используем зум для просмотра</h2>
+
+<p>Не забывайте, что <b>WebView</b> можно использовать не только для просмотра html-страниц, но и для просмотра изображений. Поэтому данный компонент вполне можно использовать просмотра картинок с котиками, к тому же вы можете включить встроенный механизм масштабирования:</p>
+
+<div class="alert alert-warning">
+При работе с протоколом http используйте совет <a href="../tips-android.php#cleartext">Cleartext HTTP traffic not permitted (https)</a>
+</div>
+
+<pre class="bg-light"><code class="java">
+mWebView = findViewById(R.id.webView1);
+// устанавливаем Zoom control
+mWebView.getSettings().setBuiltInZoomControls(true);
+		
+// загружаем картинку (не забудьте установить разрешение на интернет)
+mWebView.loadUrl("http://netsources.narod.ru/friday/alkocat.jpg");
+this.setTitle("WebView");
+</code></pre>
+
+<p><img src="../images/webview3.png" alt="Zoom"></p>
+
+<h2 class="text-warning" id="transparent">Прозрачность</h2>
+
+<p>Устанавливать прозрачность лучше программно. Встречал жалобы, что через XML это свойство не работает.</p>
+
+<pre class="bg-light"><code class="java">
+webView.setBackgroundColor(0x00000000);
+</code></pre>
+
+<h2 class="text-warning">WebView в Lollipop</h2>
+
+<p>В Android 5.0 компонент доступен в Google Play (<a href="https://play.google.com/store/apps/details?id=com.google.android.webview" >Android System WebView</a>) и его можно обновлять на устройстве.</p>
+
+<p>Компонент теперь основывается на движке Chromium и поддерживает следующие новинки.</p>
+
+<ul>
+<li>WebRTC</li>
+<li>WebAudio</li>
+<li>WebGL</li>
+</ul>
+
+<p>Можно ознакомиться с некоторыми примерами - <a href="https://github.com/GoogleChrome/chromium-webview-samples" >GoogleChrome/chromium-webview-samples</a>. Там есть примеры с WebRTC, полноэкранным режимом, касаниями экрана, выбора файла, работой с JavaScript-сценариями.</p>
+
+<p>Кроме того, стал доступен <b>Safe Browsing</b> - механизм, предупреждающий об опасных ссылках. Включается через манифест.</p>
+
+<pre class="bg-light"><code>
+&lt;manifest&gt;
+     &lt;meta-data android:name=&quot;android.webkit.WebView.EnableSafeBrowsing&quot;
+                android:value=&quot;true&quot; /&gt;
+      . . .
+     &lt;application&gt; . . . &lt;/application&gt;
+&lt;/manifest&gt;
+</code></pre>
+
+<h2 class="text-warning">Советы</h2>
+
+<h3 class="text-warning">Фон</h3>
+
+<p>Если вы заметили, что экран мерцает во время загрузки <b>WebView</b>, то поменяйте фон. Мерцание происходит из-за смены фона приложения (темы), на белый фон по умолчанию для <b>WebView</b>, а потом на фон, который прописан на странице.</p>
+
+<pre class="bg-light"><code class="java">
+mWebView.setBackgroundColor(Color.parseColor("#3498db"));
+mWebView.setBackgroundColor(getResources().getColor(R.color.my_color_name));
+// и т.п.
+</code></pre> 
+
+<h3 class="text-warning">Касания экрана</h3>
+
+<p>Так как поддерживаются касания экрана, то старайтесь использовать на веб-странице визуальные эффекты нажатия кнопок и других элементов при помощи псевдокласса <b>:active</b>, например, так:</p>
+
+<pre class="bg-light"><code>
+.btn {
+  display: inline-block;
+  position: relative;
+  background-color: #f39c12;
+  padding: 14px;
+
+  border-radius: 5px;
+  border-bottom-style: solid;
+  border-width: 4px;
+  border-color: #DA8300;
+}
+
+.btn:active {
+  background-color: #E68F05;
+  border-color: #CD7600;
+  border-width: 2px;
+  top: 2px;
+}
+</code></pre>
+
+<h2 class="text-warning" id="settings">Настройки</h2>
+
+<p>В API 24 появилась возможность открыть окно настроек и выбрать движок для <b>WebView</b>:</p>
+
+<pre class="bg-light"><code>
+Intent intent = new Intent(Settings.ACTION_WEBVIEW_SETTINGS);
+if (intent.resolveActivity(getPackageManager()) != null) {
+    startActivity(intent);
+}
+</code></pre>
+
+<h2 class="text-warning" id="dark">Ночной режим</h2>
+
+<p>Появилась поддержка тёмной темы в последних версиях WebView.</p>
+
+<pre class="bg-light"><code>
+implementation "androidx.webkit:webkit:1.2.0-alpha01"
+</code></pre>
+
+<p>За ночной режим отвечает класс <b>WebViewFeature</b>, который имеет в своём составе коллекцию различных возможностей. Проверить поддержку той или иной возможности можно через <b>isFeatureSupported()</b>.</p>
+
+<pre class="bg-light"><code>
+// Поддерживается ли ночной режим
+if (WebViewFeature.isFeatureSupported(WebViewFeature.FORCE_DARK)) { ... }
+</code></pre>
+
+<p>Всего три варианта для тёмной темы.</p>
+
+<ul>
+<li>FORCE_DARK_OFF</li>
+<li>FORCE_DARK_AUTO</li>
+<li>FORCE_DARK_ON</li>
+</ul>
+
+<p>Включаем ночной режим.</p>
+
+<pre class="bg-light"><code>
+WebSettingsCompat.setForceDark(webView.settings, WebSettingsCompat.FORCE_DARK_ON)
+</code></pre>
+
+<p>Получаем текущий режим.</p>
+
+<pre class="bg-light"><code>
+val forceDarkMode = WebSettingsCompat.getForceDark(webView.settings)
+</code></pre>
+
+<h2 class="text-warning">Дополнительное чтение</h2>
+
+<p><a href="../mybrowser.php" >WebView - создай свой браузер</a></p>
+
+<p><a href="../webview-advanced.php" >Продвинутый WebView</a></p>
+<p><a href="webview_upload_image.php">Загрузка изображения на сервер в WebView</a></p>
+
+<p><a href="https://medium.com/@trionkidnapper/android-webview-downloading-images-f0ec21ac75d2">Android WebView — Downloading Images</a></p>
+
+<h5 class="text-error">Реклама</h5>
+
+<script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+<!-- 468x60Klimov, создано 12.07.09 -->
+<ins class="adsbygoogle"
+     style="display:inline-block;width:468px;height:60px"
+     data-ad-client="ca-pub-4224968932772057"
+     data-ad-slot="3174401079"></ins>
+<script>
+(adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+
+	<div id="cat">
+		<div class="cat-paws"></div>
+			<div class="cat-itself-wrap">
+				<div class="cat-itself">
+					<div id="cat-eye-left" class="cat-eye" style="display: block;">
+						<div class="cat-eyeball"></div>
+					</div>
+					<div id="cat-eye-right" class="cat-eye" style="display: block;">
+						<div class="cat-eyeball"></div>
+					</div>
+				</div>
+			</div>
+	</div>
+
+</div><!--/span-->
+</div><!--/row-->	
+</div><!--/span-->
+		
+	<div class="col-md-2">
+        <div class="well sidebar-nav">
+    <h4><span class="label label-info">Реклама</span></h4>
+    <script type="text/javascript">
+    google_ad_client = "ca-pub-4224968932772057";
+    google_ad_slot = "8217353101";
+    google_ad_width = 160;
+    google_ad_height = 600;
+</script>
+<!-- 160 x 600 -->
+<script type="text/javascript"
+src="//pagead2.googlesyndication.com/pagead/show_ads.js">
+</script>
+</div><!--/.well -->    </div><!--/span-->
+</div><!--/row-->
+
+<hr>
+	  
+<footer class="footer row">
+    <div class="col-10">
+
+      <span>
+        © 2023 <a class="text-secondary" href="/cdn-cgi/l/email-protection#582a2d2b282a37323d3b2c1835393134762a2d">А.Климов</a>
+        <!--
+        <a href="https://www.facebook.com/DeveloperAlexanderKlimovRU/"><img src="http://developer.alexanderklimov.ru/images/facebook.svg" alt="Facebook" width="16" height="16"></a>
+      </span>
+
+    <a href="http://feeds.feedburner.com/alexanderklimov/VJcl"><img src="http://developer.alexanderklimov.ru/kot-2-rss-100.png" border="0" width="75"></a>
+    -->
+
+   </div>
+
+<div class="col">
+<span class="align-bottom">
+<!-- Rating@Mail.ru logo -->
+<a href="https://top.mail.ru/jump?from=228158">
+<img src="//top-fwz1.mail.ru/counter?id=228158;t=338;l=1" 
+style="border:0;" height="18" width="88" alt="Рейтинг@Mail.ru" /></a>
+<!-- //Rating@Mail.ru logo -->
+</span>	
+</div>
+<!--
+<div class="col">
+
+    <img src="http://developer.alexanderklimov.ru/images/cat_bottom.png"/>
+
+</div>
+-->
+</footer>
+
+</div><!--/.fluid-container--><!-- Placed at the end of the document so the pages load faster -->
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="https://code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="crossorigin="anonymous"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
+<script src="//developer.alexanderklimov.ru/blocks/backtotop.js"></script>
+
+<script>
+$(function()
+{
+	var b = $("#cat-eye-left"), k = b.find("div"), h=$("#cat-eye-right"), l=h.find("div");
+	b.show();
+	h.show();
+	var d = b.offset().left+37, c = b.offset().top+15, f, e, g=!1;
+	$("body").mousemove(function(a){
+		if(!g){
+		    g=!0;
+            var b = a.pageX;
+			a = a.pageY;
+            e = 6*(a-c)/Math.sqrt((b-d)*(b-d)+(a-c)*(a-c))+c;
+		    f =(e-c)*(b-d)/(a-c)+d;
+		    k.css({marginTop:e-c+1+"px",marginLeft:f-d+"px"});
+            l.css({marginTop:e-c-1+"px",marginLeft:f-d+"px"});g=!1
+		}
+	});
+$("#cat").mousemove(function(a){a.stopPropagation();return!1})});
+
+var darkMode = false;
+
+function funonload() {
+	//var boolValue = (stringValue =="true");   //returns true
+    mode = localStorage.getItem("darkMode");
+	darkMode = (mode =="true");
+	//console.log(localStorage.getItem("darkMode"));
+	if(darkMode == true){
+		var element = document.body;
+        element.classList.toggle("dark-mode");
+		//element.classList.checkbox.checked = true;
+		document.getElementById("switch").checked = true;
+	}
+} 
+
+window.onload = funonload;
+
+function myFunction() {
+   var element = document.body;
+   element.classList.toggle("dark-mode");
+   darkMode = !darkMode
+   localStorage.setItem("darkMode", darkMode);
+}
+</script>
+</body>
+</html>
