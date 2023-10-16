@@ -54,13 +54,18 @@ dependencies {
     // Если поставить выше - нужен API > 33, иначе проблемы с Input Stream
     // https://stackoverflow.com/questions/76549421/jgit-failure-in-cloning-repository
     implementation ("org.eclipse.jgit:org.eclipse.jgit:6.2.0.202206071550-r")
+
     //RichText (Markdown parser)
     implementation ("com.halilibo.compose-richtext:richtext-commonmark:0.17.0")
     implementation ("com.halilibo.compose-richtext:richtext-ui-material3:0.17.0")
+
     //Retrofit
     implementation ("com.squareup.retrofit2:retrofit:2.9.0")
     implementation ("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation ("com.squareup.retrofit2:converter-scalars:2.9.0")
     implementation ("com.squareup.okhttp3:okhttp:4.11.0")
+    implementation ("com.squareup.okhttp3:logging-interceptor:4.11.0")
+
     //Initial
     implementation("androidx.core:core-ktx:1.9.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.1")

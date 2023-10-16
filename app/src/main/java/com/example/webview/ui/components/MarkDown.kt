@@ -1,4 +1,4 @@
-package com.example.webview.components
+package com.example.webview.ui.components
 
 import android.util.Log
 import androidx.compose.foundation.layout.padding

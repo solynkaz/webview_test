@@ -1,4 +1,4 @@
-package com.example.webview.components
+package com.example.webview.ui.components
 
 import android.content.Context
 import android.util.Log
@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Search
@@ -29,6 +30,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.example.webview.AppConsts
+import com.example.webview.getRepoURL
 import com.example.webview.gitClone
 import com.example.webview.isOnline
 import com.example.webview.readFileFromInternalStorage
@@ -48,7 +50,9 @@ fun ControlButtons(
     val login = remember { mutableStateOf("") }
     val password = remember { mutableStateOf("") }
     val passwordVisibility = remember { mutableStateOf(false) } // TODO Добавить функционал
-    val buttonModifier : Modifier = Modifier.fillMaxWidth().padding(horizontal = 5.dp)
+    val buttonModifier : Modifier = Modifier
+        .fillMaxWidth()
+        .padding(horizontal = 5.dp)
     val context = LocalContext.current
     Column() {
         Row(modifier = Modifier.padding(vertical = 10.dp)) {
@@ -130,6 +134,15 @@ fun ControlButtons(
                 })
             {
                 Icon(Icons.Filled.Star, "Check internet connection")
+            }
+            FloatingActionButton(
+                onClick = {
+                    coroutineScope.launch {
+                        getRepoURL()
+                    }
+                })
+            {
+                Icon(Icons.Filled.Build, "Query Graph")
             }
         } // Button Row
     }
