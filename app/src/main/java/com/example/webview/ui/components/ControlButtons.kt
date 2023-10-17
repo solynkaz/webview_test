@@ -29,11 +29,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.ViewModel
 import com.example.webview.AppConsts
 import com.example.webview.getRepoURL
 import com.example.webview.gitClone
 import com.example.webview.isOnline
 import com.example.webview.readFileFromInternalStorage
+import com.example.webview.viewmodel.GitRepoEvent
+import com.example.webview.viewmodel.GitViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import java.io.File
@@ -45,14 +49,16 @@ fun ControlButtons(
     currentFilePath: MutableState<String>,
     mdContent: MutableState<String>,
     buttonsVisibility: MutableState<Boolean>,
-    coroutineScope: CoroutineScope
-) {
+    coroutineScope: CoroutineScope,
+    gitViewModel: GitViewModel = hiltViewModel()
+    ) {
     val login = remember { mutableStateOf("") }
     val password = remember { mutableStateOf("") }
     val passwordVisibility = remember { mutableStateOf(false) } // TODO Добавить функционал
     val buttonModifier : Modifier = Modifier
         .fillMaxWidth()
         .padding(horizontal = 5.dp)
+
     val context = LocalContext.current
     Column() {
         Row(modifier = Modifier.padding(vertical = 10.dp)) {
@@ -137,9 +143,7 @@ fun ControlButtons(
             }
             FloatingActionButton(
                 onClick = {
-                    coroutineScope.launch {
-                        getRepoURL()
-                    }
+                    gitViewModel.onEvent(GitRepoEvent.GetRepoUrl(AppConsts.WIKI_JS_BEARER, context))
                 })
             {
                 Icon(Icons.Filled.Build, "Query Graph")
