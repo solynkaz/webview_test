@@ -2,19 +2,15 @@ package com.example.webview.ui.components
 
 import android.content.Context
 import android.util.Log
-import android.widget.Toast
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -27,18 +23,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.ViewModel
 import com.example.webview.AppConsts
-import com.example.webview.getRepoURL
-import com.example.webview.gitClone
 import com.example.webview.isOnline
 import com.example.webview.isRepoEmpty
-import com.example.webview.readFileFromInternalStorage
-import com.example.webview.viewmodel.GitRepoEvent
 import com.example.webview.viewmodel.GitViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -56,7 +45,6 @@ fun ControlButtons(
     ) {
     val login = remember { mutableStateOf("") }
     val password = remember { mutableStateOf("") }
-    val passwordVisibility = remember { mutableStateOf(false) } // TODO Добавить функционал
     val buttonModifier : Modifier = Modifier
         .fillMaxWidth()
         .padding(horizontal = 5.dp)
@@ -80,7 +68,6 @@ fun ControlButtons(
                 enabled = true,
                 modifier = buttonModifier.weight(0.5f, true),
                 singleLine = true,
-                visualTransformation = if (passwordVisibility.value) VisualTransformation.None else PasswordVisualTransformation(),
                 label = {
                     Text(text = "Пароль")
                 },
@@ -124,13 +111,6 @@ fun ControlButtons(
                 })
             {
                 Icon(Icons.Filled.Star, "Check internet connection")
-            }
-            FloatingActionButton(
-                onClick = {
-                    gitViewModel.onEvent(GitRepoEvent.GetRepoUrl(AppConsts.WIKI_JS_BEARER, context))
-                })
-            {
-                Icon(Icons.Filled.Build, "Query Graph")
             }
             FloatingActionButton(
                 onClick = {

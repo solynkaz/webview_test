@@ -20,7 +20,7 @@ import javax.inject.Inject
 
 sealed class GitRepoEvent {
     data class GetRepoUrl(val bearer: String, val context: Context) : GitRepoEvent()
-    data class LoadSettings(val prefs: SharedPreferences) : GitRepoEvent()
+    data class LoadGitSettings(val prefs: SharedPreferences) : GitRepoEvent()
     data class GitRepoClone(val context: Context, val login: String, val password: String) :
         GitRepoEvent()
 }
@@ -94,7 +94,7 @@ class GitViewModel @Inject constructor() : ViewModel() {
                 }
             }
 
-            is GitRepoEvent.LoadSettings -> {
+            is GitRepoEvent.LoadGitSettings -> {
                 Log.i("Git", "Loading settings...")
                 val _repoUrl = event.prefs.getString(PREFS_VALUES.GIT_REPO_URL, "")
                 val _isRepoCloned = event.prefs.getBoolean(PREFS_VALUES.IS_REPO_CLONED, false)

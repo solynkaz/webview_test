@@ -2,6 +2,7 @@ package com.example.webview
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.net.ConnectivityManager
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -82,15 +83,15 @@ suspend fun gitFetch() {
 }
 
 fun isOnline(context: Context): Boolean {
-//    val connectivityManager =
-//        context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-//    val capabilities =
-//        connectivityManager.getNetworkCapabilities(connectivityManager.activeNetwork)
-//    return if (capabilities == null) {
-//        Log.i("Internet", "No internet connection available.")
-//        false
-//    } else {
-//        true
-//    }
-    return false
+    val connectivityManager =
+        context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+    val capabilities =
+        connectivityManager.getNetworkCapabilities(connectivityManager.activeNetwork)
+    return if (capabilities == null) {
+        Log.i("Internet", "No internet connection available.")
+        false
+    } else {
+        Log.i("Internet", "Internet connection is available")
+        true
+    }
 }
