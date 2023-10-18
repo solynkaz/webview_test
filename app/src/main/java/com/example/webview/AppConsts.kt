@@ -22,4 +22,5 @@ object AppConsts {
 
 object PREFS_VALUES {
     const val GIT_REPO_URL = "GIT_REPO_URL"
+    const val IS_REPO_CLONED = "IS_REPO_CLONED"
 }

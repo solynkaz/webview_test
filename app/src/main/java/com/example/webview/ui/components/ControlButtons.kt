@@ -12,6 +12,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Star
@@ -35,6 +36,7 @@ import com.example.webview.AppConsts
 import com.example.webview.getRepoURL
 import com.example.webview.gitClone
 import com.example.webview.isOnline
+import com.example.webview.isRepoEmpty
 import com.example.webview.readFileFromInternalStorage
 import com.example.webview.viewmodel.GitRepoEvent
 import com.example.webview.viewmodel.GitViewModel
@@ -99,24 +101,6 @@ fun ControlButtons(
             }
             FloatingActionButton(
                 onClick = {
-                    mdContent.value = readFileFromInternalStorage(currentFilePath.value, context)
-                    buttonsVisibility.value = false
-                },
-            ) {
-                Icon(Icons.Filled.Home, "Parse Home.md")
-            }
-            FloatingActionButton(
-                onClick = {
-                    coroutineScope.launch {
-                        gitClone(context = context, login.value, password.value)
-                        Toast.makeText(context, "Git repository was cloned successfully", Toast.LENGTH_SHORT).show()
-                    }
-                })
-            {
-                Icon(Icons.Filled.Send, "Clone git repo")
-            }
-            FloatingActionButton(
-                onClick = {
                     coroutineScope.launch {
                         val directoryPath = "${AppConsts.GIT_FOLDER}/"
                         val localPath = File(context.filesDir, directoryPath)
@@ -147,6 +131,13 @@ fun ControlButtons(
                 })
             {
                 Icon(Icons.Filled.Build, "Query Graph")
+            }
+            FloatingActionButton(
+                onClick = {
+                    isRepoEmpty(context)
+                })
+            {
+                Icon(Icons.Filled.LocationOn, "Query Graph")
             }
         } // Button Row
     }

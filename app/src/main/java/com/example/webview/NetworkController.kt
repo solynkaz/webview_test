@@ -15,34 +15,6 @@ import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider
 import org.json.JSONObject
 import java.io.File
 
-suspend fun gitClone(context: Context, login: String, password: String): Boolean {
-    try {
-        val directoryPath = "${AppConsts.GIT_FOLDER}/"
-        val localPath = File(context.filesDir, directoryPath)
-        localPath.deleteRecursively()
-        if (!localPath.exists()) {
-            localPath.mkdirs()
-        }
-        val remoteRepoURL = "https://gitlab.sibdigital.net/sibdigital/kb.git"
-        //TODO Вытащить с ответа
-
-        val credentialsProvider = UsernamePasswordCredentialsProvider(login, password)
-        withContext(Dispatchers.IO) {
-            val cloneCommand = CloneCommand()
-                .setURI(remoteRepoURL)
-                .setDirectory(localPath)
-                .setCredentialsProvider(credentialsProvider)
-            cloneCommand.call()
-        }
-        Log.i("GIT", "Git was cloned with success.")
-        return true
-    } catch (ex: Exception) {
-        Toast.makeText(context, "Error while git clone", Toast.LENGTH_SHORT).show()
-        Log.e("GIT", ex.toString())
-        return false
-    }
-}
-
 suspend fun getRepoURL(bearer: String, context: Context): Boolean {
     val retrofit = GraphQLInstance.graphQLService
     val paramObject = JSONObject()
@@ -52,7 +24,8 @@ suspend fun getRepoURL(bearer: String, context: Context): Boolean {
         "prefs",
         ComponentActivity.MODE_PRIVATE
     )
-    if (pref.getString(PREFS_VALUES.GIT_REPO_URL, "") == "") {
+    val currentSetting = pref.getString(PREFS_VALUES.GIT_REPO_URL, "")
+    if (currentSetting == "") {
         // TODO Где брать Bearer?
         try {
             val response = Gson().fromJson(
@@ -61,7 +34,7 @@ suspend fun getRepoURL(bearer: String, context: Context): Boolean {
             )
             val target = response?.data?.storage?.targets?.find { it.title == "Git" }
             responseRepoUrl = target?.config?.find { it.key == "repoUrl" }?.value?.let {
-                JSONObject(it).getString("value")
+                JSONObject(it).getString("value").removeSuffix(".git")
             }!!
             pref.edit().putString(PREFS_VALUES.GIT_REPO_URL, responseRepoUrl).apply()
 
@@ -72,6 +45,42 @@ suspend fun getRepoURL(bearer: String, context: Context): Boolean {
     }
     return true
 }
+
+suspend fun gitClone(context: Context, repoUrl: String, login: String, password: String): Boolean {
+    try {
+        val directoryPath = "${AppConsts.GIT_FOLDER}/"
+        val localPath = File(context.filesDir, directoryPath)
+        localPath.deleteRecursively()
+        if (!localPath.exists()) {
+            localPath.mkdirs()
+        }
+
+        val credentialsProvider = UsernamePasswordCredentialsProvider(login, password)
+        withContext(Dispatchers.IO) {
+            val cloneCommand = CloneCommand()
+                .setURI(repoUrl)
+                .setDirectory(localPath)
+                .setCredentialsProvider(credentialsProvider)
+            cloneCommand.call()
+        }
+        Toast.makeText(context, "Git was cloned with success", Toast.LENGTH_SHORT).show()
+        val pref: SharedPreferences = context.getSharedPreferences(
+            "prefs",
+            ComponentActivity.MODE_PRIVATE
+        )
+        pref.edit().putBoolean(PREFS_VALUES.IS_REPO_CLONED, true).apply()
+        return true
+    } catch (ex: Exception) {
+        Toast.makeText(context, "Error while git clone", Toast.LENGTH_SHORT).show()
+        Log.e("Git", ex.toString())
+        return false
+    }
+}
+
+suspend fun gitFetch() {
+    //TODO
+}
+
 fun isOnline(context: Context): Boolean {
 //    val connectivityManager =
 //        context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
