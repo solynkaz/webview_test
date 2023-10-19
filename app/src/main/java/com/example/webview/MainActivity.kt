@@ -97,7 +97,7 @@ fun Main_screen(
     }
 
     if (appViewModel.appState.login == "") {
-        LoginCompose()
+        LoginCompose(isThereNetworkConnection)
     } else {
         if (isThereNetworkConnection.value) {
             WebView(context = context, type = "web")
@@ -123,8 +123,7 @@ fun WebView(context: Context, type: String) {
             webViewClient = WebViewClient()
             settings.javaScriptEnabled = true
             settings.useWideViewPort = true
-            settings.loadWithOverviewMode = true
-            settings.displayZoomControls = true
+//            settings.loadWithOverviewMode = true
 //            settings.userAgentString = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36 Edge/16.16299"
             settings.domStorageEnabled = true
             webChromeClient = object : WebChromeClient() {
@@ -156,6 +155,7 @@ fun WebView(context: Context, type: String) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginCompose(
+    isThereNetworkConnection: MutableState<Boolean>,
     appViewModel: AppViewModel = hiltViewModel(),
     gitViewModel: GitViewModel = hiltViewModel()
 ) {
@@ -203,7 +203,7 @@ fun LoginCompose(
             Button(
                 onClick = {
                     appViewModel.onEvent(AppEvent.Login(login.value, password.value))
-                    if (!gitViewModel.gitRepoState.isGitUpdatePending) {
+                    if (!gitViewModel.gitRepoState.isGitUpdatePending && isThereNetworkConnection.value) {
                         gitViewModel.onEvent(
                             GitRepoEvent.GitUpdate(
                                 bearer = appViewModel.appState.bearer,
