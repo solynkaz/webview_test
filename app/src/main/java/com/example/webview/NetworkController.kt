@@ -12,6 +12,10 @@ import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.eclipse.jgit.api.CloneCommand
+import org.eclipse.jgit.api.FetchCommand
+import org.eclipse.jgit.api.Git
+import org.eclipse.jgit.internal.storage.file.FileRepository
+import org.eclipse.jgit.storage.file.FileRepositoryBuilder
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider
 import org.json.JSONObject
 import java.io.File
@@ -62,7 +66,7 @@ suspend fun gitClone(context: Context, repoUrl: String, login: String, password:
                 .setURI(repoUrl)
                 .setDirectory(localPath)
                 .setCredentialsProvider(credentialsProvider)
-            cloneCommand.call()
+            cloneCommand.call().close()
         }
         Toast.makeText(context, "Git was cloned with success", Toast.LENGTH_SHORT).show()
         val pref: SharedPreferences = context.getSharedPreferences(
@@ -78,8 +82,32 @@ suspend fun gitClone(context: Context, repoUrl: String, login: String, password:
     }
 }
 
-suspend fun gitFetch() {
-    //TODO
+suspend fun gitFetch(context: Context, repoUrl: String, login: String, password: String): Boolean {
+    Log.i("Git", "Start fetching from $repoUrl")
+    try {
+        val directoryPath = "${AppConsts.GIT_FOLDER}/"
+        val localPath = File(context.filesDir, directoryPath)
+        var git: Git? = null
+        try {
+            val repo = FileRepositoryBuilder().setGitDir(localPath).build()
+            git = Git.wrap(repo)
+        } catch (ex: Exception) {
+            Log.e("Git", "Error while fetch: unable to Git.wrap()")
+        }
+        try {
+            val pull = git?.pull()?.setRemote("develop")?.call()
+            val fetchResult = pull?.fetchResult
+            Log.i("Git", "Fetch result: $fetchResult")
+        } catch (ex: Exception) {
+            Log.e("Git", "Error while fetching: ${ex.toString()}")
+        } finally {
+            git?.close()
+        }
+        return true
+    } catch (ex: Exception) {
+        Log.e("Git", ex.toString())
+        return false
+    }
 }
 
 fun isOnline(context: Context): Boolean {

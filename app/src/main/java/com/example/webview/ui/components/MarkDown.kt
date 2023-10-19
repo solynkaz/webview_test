@@ -1,6 +1,7 @@
 package com.example.webview.ui.components
 
 import android.util.Log
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -36,6 +37,8 @@ fun MarkDownContent(
     val context = LocalContext.current
     val firstLoad = remember { mutableStateOf(true) }
     val dirs = context.filesDir
+    var scrollState = remember { mutableStateOf(ScrollState(0)) }
+
     if (firstLoad.value) {
         mdModel.onEvent(
             MDEvent.loadFile(
@@ -66,11 +69,12 @@ fun MarkDownContent(
                     modifier = Modifier
                         .padding(padding)
                         .padding(all = 15.dp)
-                        .verticalScroll(rememberScrollState())
+                        .verticalScroll(scrollState.value)
                 ) {
                     Markdown(
                         content = mdModel.mdState.data,
                         onLinkClicked = { link ->
+                            scrollState.value = ScrollState(0)
                             currentFilePath.value = link
                             Log.i("MarkDown", "Link changed to ${currentFilePath.value}")
                             mdModel.onEvent(

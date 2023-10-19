@@ -13,6 +13,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.webview.PREFS_VALUES
 import com.example.webview.getRepoURL
 import com.example.webview.gitClone
+import com.example.webview.gitFetch
 import com.example.webview.isRepoEmpty
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -23,6 +24,10 @@ import javax.inject.Inject
 sealed class GitRepoEvent {
     data class GetRepoUrl(val bearer: String, val context: Context) : GitRepoEvent()
     data class LoadGitSettings(val prefs: SharedPreferences) : GitRepoEvent()
+
+    data class GitFetch(val context: Context, val login: String, val password: String) :
+        GitRepoEvent()
+
     data class GitRepoClone(val context: Context, val login: String, val password: String) :
         GitRepoEvent()
 }
@@ -30,9 +35,12 @@ sealed class GitRepoEvent {
 data class GitRepoState(
     val gitRepoUrl: String? = "",
     val isGetRepoUrlPending: Boolean = false,
+
     val isGitClonePending: Boolean = false,
-    val isGitRepoUrlLoaded: Boolean = false,
     val isGitCloneLoaded: Boolean = false,
+
+    val isGitFetchPending: Boolean = false,
+    val isGitFetched: Boolean = false,
 )
 
 @HiltViewModel
@@ -54,10 +62,12 @@ class GitViewModel @Inject constructor() : ViewModel() {
                     )
                     gitRepoState = gitRepoState.copy(
                         isGetRepoUrlPending = false,
-                        isGitRepoUrlLoaded = gitUrlResponse,
                         gitRepoUrl = pref.getString(PREFS_VALUES.GIT_REPO_URL, "")
                     )
-                    Log.i("Git", "Repo url updated: ${pref.getString(PREFS_VALUES.GIT_REPO_URL, "")}")
+                    Log.i(
+                        "Git",
+                        "Repo url updated: ${pref.getString(PREFS_VALUES.GIT_REPO_URL, "")}"
+                    )
                 }
             }
 
@@ -100,8 +110,26 @@ class GitViewModel @Inject constructor() : ViewModel() {
                 Log.i("Git", "Loading settings...")
                 val _repoUrl = event.prefs.getString(PREFS_VALUES.GIT_REPO_URL, "")
                 val _isRepoCloned = event.prefs.getBoolean(PREFS_VALUES.IS_REPO_CLONED, false)
-                gitRepoState = gitRepoState.copy(gitRepoUrl = _repoUrl, isGitCloneLoaded = _isRepoCloned)
+                gitRepoState =
+                    gitRepoState.copy(gitRepoUrl = _repoUrl, isGitCloneLoaded = _isRepoCloned)
                 Log.i("Git", "Settings loaded")
+            }
+
+            is GitRepoEvent.GitFetch -> {
+                gitRepoState = gitRepoState.copy(isGitFetchPending = true)
+                if (gitRepoState.isGitCloneLoaded && gitRepoState.gitRepoUrl != "") {
+                    viewModelScope.launch {
+                        gitFetch(
+                            context = event.context,
+                            repoUrl = gitRepoState.gitRepoUrl!!,
+                            login = event.login,
+                            password = event.password
+                        )
+                        gitRepoState = gitRepoState.copy(isGitFetched = true, isGitFetchPending = false)
+                    }
+                } else {
+                    Log.i("Git", "Unable to fetch, theres no repository or repo url is invalid.")
+                }
             }
 
             else -> {

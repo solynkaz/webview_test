@@ -4,9 +4,15 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
+import android.view.KeyEvent
+import android.webkit.ConsoleMessage
+import android.webkit.WebBackForwardList
+import android.webkit.WebChromeClient
+import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,7 +21,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.windowInsetsEndWidth
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -23,9 +28,10 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment.Companion.Center
 import androidx.compose.ui.Alignment.Companion.CenterHorizontally
 import androidx.compose.ui.Alignment.Companion.CenterVertically
@@ -88,6 +94,9 @@ fun Main_screen(
         isThereNetworkConnection.value = isOnline(context)
         gitViewModel.onEvent(GitRepoEvent.LoadGitSettings(prefs = prefs))
         appViewModel.onEvent(AppEvent.LoadAppSettings(prefs = prefs))
+        if (gitViewModel.gitRepoState.gitRepoUrl == "" && !gitViewModel.gitRepoState.isGetRepoUrlPending) {
+            gitViewModel.onEvent(GitRepoEvent.GetRepoUrl(appViewModel.appState.bearer, context))
+        }
         firstLaunch.value = false
     }
 
@@ -95,27 +104,7 @@ fun Main_screen(
         LoginCompose(appViewModel)
     } else {
         if (isThereNetworkConnection.value) {
-            if (gitRepoState.isGitClonePending || gitRepoState.isGitClonePending) {
-                Box(modifier = Modifier.fillMaxSize()) {
-                    CircularProgressIndicator(
-                        Modifier.align(
-                            Center
-                        )
-                    )
-                }
-            }
-            if (gitRepoState.gitRepoUrl == "" && !gitRepoState.isGetRepoUrlPending) {
-                gitViewModel.onEvent(GitRepoEvent.GetRepoUrl(appViewModel.appState.bearer, context))
-            }
-            if (!gitRepoState.isGitCloneLoaded && !gitRepoState.isGitClonePending && gitRepoState.gitRepoUrl != "") {
-                gitViewModel.onEvent(
-                    GitRepoEvent.GitRepoClone(
-                        context,
-                        appViewModel.appState.login,
-                        appViewModel.appState.password
-                    )
-                )
-            }
+            updateRepo(context = context, gitViewModel = gitViewModel, appViewModel = appViewModel)
             WebView(context = context, type = "web")
         } else {
 //        ControlButtons(currentFilePath, fileContent, buttonsVisibility, coroutineScope)
@@ -135,13 +124,26 @@ fun Main_screen(
 @Composable
 fun WebView(context: Context, type: String) {
     val mdState: MDState = hiltViewModel<MarkdownViewModel>().mdState
-
+    val gitViewModel: GitViewModel = hiltViewModel()
     val webView = remember {
         WebView(context).apply {
             webViewClient = WebViewClient()
             settings.javaScriptEnabled = true
+            settings.useWideViewPort = true
+            settings.loadWithOverviewMode = true
+            settings.displayZoomControls = true
+//            settings.userAgentString = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36 Edge/16.16299"
+            settings.domStorageEnabled = true
+            webChromeClient = object : WebChromeClient() {
+                override fun onConsoleMessage(consoleMessage: ConsoleMessage): Boolean {
+                    Log.d("WebViewDebug", "JavaScript Console: ${consoleMessage.message()}")
+                    return true
+                }
+            }
         }
     }
+
+    val webHistory: WebBackForwardList? by rememberUpdatedState(newValue = webView.copyBackForwardList())
     AndroidView(
         modifier = Modifier
             .fillMaxSize(),
@@ -153,6 +155,13 @@ fun WebView(context: Context, type: String) {
                 it.loadUrl(AppConsts.KB_URL)
             }
         })
+    BackHandler(enabled = webHistory?.currentIndex != 0) {
+        webView.goBack()
+    }
+}
+
+fun isPending(gitViewModel: GitViewModel): Boolean {
+    return gitViewModel.gitRepoState.isGitClonePending || gitViewModel.gitRepoState.isGetRepoUrlPending || gitViewModel.gitRepoState.isGitFetchPending
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -212,6 +221,27 @@ fun LoginCompose(appViewModel: AppViewModel) {
             Spacer(Modifier.weight(0.5f))
         }
         Spacer(Modifier.weight(1f))
+    }
+}
+
+fun updateRepo(context: Context, gitViewModel: GitViewModel, appViewModel: AppViewModel) {
+    if (!gitViewModel.gitRepoState.isGitClonePending && gitViewModel.gitRepoState.gitRepoUrl != "") {
+        gitViewModel.onEvent(
+            GitRepoEvent.GitRepoClone(
+                context,
+                appViewModel.appState.login,
+                appViewModel.appState.password
+            )
+        )
+    }
+    if (!gitViewModel.gitRepoState.isGitFetched && !gitViewModel.gitRepoState.isGitFetchPending) {
+        gitViewModel.onEvent(
+            GitRepoEvent.GitFetch(
+                context,
+                appViewModel.appState.login,
+                appViewModel.appState.password
+            )
+        )
     }
 }
 
