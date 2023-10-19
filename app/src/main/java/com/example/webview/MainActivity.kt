@@ -159,8 +159,8 @@ fun LoginCompose(
     appViewModel: AppViewModel = hiltViewModel(),
     gitViewModel: GitViewModel = hiltViewModel()
 ) {
-    val login = remember { mutableStateOf("") }
-    val password = remember { mutableStateOf("") }
+    val login = remember { mutableStateOf("zma@sibdigital.net") }
+    val password = remember { mutableStateOf("J0tul8878q1e3") }
     val context = LocalContext.current
     val textFieldModifier = Modifier.fillMaxWidth()
     Column(modifier = Modifier.fillMaxSize()) {

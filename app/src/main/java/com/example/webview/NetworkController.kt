@@ -86,23 +86,33 @@ suspend fun gitFetch(context: Context, repoUrl: String, login: String, password:
     Log.i("Git", "Start fetching from $repoUrl")
     try {
         val directoryPath = "${AppConsts.GIT_FOLDER}/"
-        val localPath = File(context.filesDir, directoryPath)
+        val files = context.filesDir
+        Log.i("Git", files.toString())
+        val localPath = File(context.filesDir, "$directoryPath/.git")
+        val credentialsProvider = UsernamePasswordCredentialsProvider(login, password)
         var git: Git? = null
+
         try {
             val repo = FileRepositoryBuilder().setGitDir(localPath).build()
             git = Git.wrap(repo)
         } catch (ex: Exception) {
             Log.e("Git", "Error while fetch: unable to Git.wrap()")
         }
+
         try {
-            val pull = git?.pull()?.setRemote("develop")?.call()
-            val fetchResult = pull?.fetchResult
-            Log.i("Git", "Fetch result: $fetchResult")
+            withContext(Dispatchers.IO) {
+                val pull = git?.pull()
+                    ?.setCredentialsProvider(credentialsProvider)
+                    ?.call()
+                val fetchResult = pull?.fetchResult
+                Log.i("Git", "Fetch result: $fetchResult")
+            }
         } catch (ex: Exception) {
             Log.e("Git", "Error while fetching: ${ex.toString()}")
         } finally {
             git?.close()
         }
+
         return true
     } catch (ex: Exception) {
         Log.e("Git", ex.toString())
