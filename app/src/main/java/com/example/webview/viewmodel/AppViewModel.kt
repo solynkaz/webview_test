@@ -36,7 +36,7 @@ class AppViewModel @Inject constructor() : ViewModel() {
                 appState = appState.copy(
                     login = login!!,
                     password = pass!!,
-                    bearer = bearer!!
+//                    bearer = bearer!!
                 )
             }
             is AppEvent.Login -> {

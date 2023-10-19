@@ -88,10 +88,10 @@ fun isOnline(context: Context): Boolean {
     val capabilities =
         connectivityManager.getNetworkCapabilities(connectivityManager.activeNetwork)
     return if (capabilities == null) {
-        Log.i("Internet", "No internet connection available.")
+        Log.i("App", "No internet connection available.")
         false
     } else {
-        Log.i("Internet", "Internet connection is available")
+        Log.i("App", "Internet connection is available")
         true
     }
 }

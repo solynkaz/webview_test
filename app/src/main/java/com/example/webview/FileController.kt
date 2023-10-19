@@ -22,7 +22,7 @@ fun isRepoEmpty(context: Context): Boolean {
     val filePath = "${context.filesDir}/${AppConsts.GIT_FOLDER}";
     val repoFiles = File(filePath).listFiles()
 
-    return repoFiles?.isEmpty() ?: false
+    return repoFiles?.isEmpty() ?: true
 }
 
 fun findFile(path: String, fileName: String): File {
