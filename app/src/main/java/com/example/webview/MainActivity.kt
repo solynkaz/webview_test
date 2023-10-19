@@ -85,7 +85,6 @@ fun Main_screen(
     gitViewModel: GitViewModel = hiltViewModel(),
     appViewModel: AppViewModel = hiltViewModel()
 ) {
-    val gitRepoState = gitViewModel.gitRepoState
     val buttonsVisibility = remember { mutableStateOf(true) }
     val currentFile = remember { mutableStateOf("home") }
     val currentFileExtension = remember { mutableStateOf("md") }
@@ -94,20 +93,15 @@ fun Main_screen(
         isThereNetworkConnection.value = isOnline(context)
         gitViewModel.onEvent(GitRepoEvent.LoadGitSettings(prefs = prefs))
         appViewModel.onEvent(AppEvent.LoadAppSettings(prefs = prefs))
-        if (gitViewModel.gitRepoState.gitRepoUrl == "" && !gitViewModel.gitRepoState.isGetRepoUrlPending) {
-            gitViewModel.onEvent(GitRepoEvent.GetRepoUrl(appViewModel.appState.bearer, context))
-        }
         firstLaunch.value = false
     }
 
     if (appViewModel.appState.login == "") {
-        LoginCompose(appViewModel)
+        LoginCompose()
     } else {
         if (isThereNetworkConnection.value) {
-            updateRepo(context = context, gitViewModel = gitViewModel, appViewModel = appViewModel)
             WebView(context = context, type = "web")
         } else {
-//        ControlButtons(currentFilePath, fileContent, buttonsVisibility, coroutineScope)
             if (currentFileExtension.value == "md") {
                 MarkDownContent(
                     buttonsVisibility,
@@ -124,7 +118,6 @@ fun Main_screen(
 @Composable
 fun WebView(context: Context, type: String) {
     val mdState: MDState = hiltViewModel<MarkdownViewModel>().mdState
-    val gitViewModel: GitViewModel = hiltViewModel()
     val webView = remember {
         WebView(context).apply {
             webViewClient = WebViewClient()
@@ -160,15 +153,15 @@ fun WebView(context: Context, type: String) {
     }
 }
 
-fun isPending(gitViewModel: GitViewModel): Boolean {
-    return gitViewModel.gitRepoState.isGitClonePending || gitViewModel.gitRepoState.isGetRepoUrlPending || gitViewModel.gitRepoState.isGitFetchPending
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LoginCompose(appViewModel: AppViewModel) {
+fun LoginCompose(
+    appViewModel: AppViewModel = hiltViewModel(),
+    gitViewModel: GitViewModel = hiltViewModel()
+) {
     val login = remember { mutableStateOf("") }
     val password = remember { mutableStateOf("") }
+    val context = LocalContext.current
     val textFieldModifier = Modifier.fillMaxWidth()
     Column(modifier = Modifier.fillMaxSize()) {
         Spacer(Modifier.weight(1f))
@@ -210,6 +203,16 @@ fun LoginCompose(appViewModel: AppViewModel) {
             Button(
                 onClick = {
                     appViewModel.onEvent(AppEvent.Login(login.value, password.value))
+                    if (!gitViewModel.gitRepoState.isGitUpdatePending) {
+                        gitViewModel.onEvent(
+                            GitRepoEvent.GitUpdate(
+                                bearer = appViewModel.appState.bearer,
+                                context = context,
+                                login = appViewModel.appState.login,
+                                password = appViewModel.appState.password,
+                            )
+                        )
+                    }
                     //TODO Проверка на валидность
                 }, modifier = Modifier
                     .fillMaxWidth()
@@ -224,25 +227,5 @@ fun LoginCompose(appViewModel: AppViewModel) {
     }
 }
 
-fun updateRepo(context: Context, gitViewModel: GitViewModel, appViewModel: AppViewModel) {
-    if (!gitViewModel.gitRepoState.isGitClonePending && gitViewModel.gitRepoState.gitRepoUrl != "") {
-        gitViewModel.onEvent(
-            GitRepoEvent.GitRepoClone(
-                context,
-                appViewModel.appState.login,
-                appViewModel.appState.password
-            )
-        )
-    }
-    if (!gitViewModel.gitRepoState.isGitFetched && !gitViewModel.gitRepoState.isGitFetchPending) {
-        gitViewModel.onEvent(
-            GitRepoEvent.GitFetch(
-                context,
-                appViewModel.appState.login,
-                appViewModel.appState.password
-            )
-        )
-    }
-}
 
 

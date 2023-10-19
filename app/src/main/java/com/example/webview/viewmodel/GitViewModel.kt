@@ -22,19 +22,21 @@ import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 sealed class GitRepoEvent {
-    data class GetRepoUrl(val bearer: String, val context: Context) : GitRepoEvent()
+    data class GitUpdate(
+        val bearer: String,
+        val context: Context,
+        val login: String,
+        val password: String
+    ) : GitRepoEvent()
+
     data class LoadGitSettings(val prefs: SharedPreferences) : GitRepoEvent()
-
-    data class GitFetch(val context: Context, val login: String, val password: String) :
-        GitRepoEvent()
-
-    data class GitRepoClone(val context: Context, val login: String, val password: String) :
-        GitRepoEvent()
 }
 
 data class GitRepoState(
     val gitRepoUrl: String? = "",
     val isGetRepoUrlPending: Boolean = false,
+    val isGitUpdated: Boolean = false,
+    val isGitUpdatePending: Boolean = false,
 
     val isGitClonePending: Boolean = false,
     val isGitCloneLoaded: Boolean = false,
@@ -51,10 +53,11 @@ class GitViewModel @Inject constructor() : ViewModel() {
 
     fun onEvent(event: GitRepoEvent) {
         when (event) {
-            is GitRepoEvent.GetRepoUrl -> {
-                gitRepoState = gitRepoState.copy(isGetRepoUrlPending = true)
-                Log.i("Git", "Started getting repo url...")
+            is GitRepoEvent.GitUpdate -> {
+                gitRepoState = gitRepoState.copy(isGitUpdatePending = true,isGetRepoUrlPending = true)
                 viewModelScope.launch {
+                    //Get repo url
+                    Log.i("Git", "Started getting repo url...")
                     val gitUrlResponse = getRepoURL(event.bearer, event.context)
                     val pref: SharedPreferences = event.context.getSharedPreferences(
                         "prefs",
@@ -68,14 +71,11 @@ class GitViewModel @Inject constructor() : ViewModel() {
                         "Git",
                         "Repo url updated: ${pref.getString(PREFS_VALUES.GIT_REPO_URL, "")}"
                     )
-                }
-            }
 
-            is GitRepoEvent.GitRepoClone -> {
-                if (isRepoEmpty(event.context)) {
-                    Log.i("Git", "Start cloning repository...")
-                    gitRepoState = gitRepoState.copy(isGitClonePending = true)
-                    viewModelScope.launch {
+                    //Try git clone
+                    if (isRepoEmpty(event.context)) {
+                        Log.i("Git", "Start cloning repository...")
+                        gitRepoState = gitRepoState.copy(isGitClonePending = true)
                         val response = gitClone(
                             context = event.context,
                             repoUrl = gitRepoState.gitRepoUrl!!,
@@ -99,13 +99,31 @@ class GitViewModel @Inject constructor() : ViewModel() {
                             Log.i("Git", "Error while git clone")
                             gitRepoState = gitRepoState.copy(isGitClonePending = false)
                         }
+                    } else {
+                        gitRepoState = gitRepoState.copy(isGitCloneLoaded = true)
+                        Log.i("Git", "Git repository already exists, clone was not called")
                     }
-                } else {
-                    gitRepoState = gitRepoState.copy(isGitCloneLoaded = true)
-                    Log.i("Git", "Git repository already exists, clone was not called")
+
+                    // Try git fetch
+                    gitRepoState = gitRepoState.copy(isGitFetchPending = true)
+                    if (gitRepoState.isGitCloneLoaded && gitRepoState.gitRepoUrl != "") {
+                        gitFetch(
+                            context = event.context,
+                            repoUrl = gitRepoState.gitRepoUrl!!,
+                            login = event.login,
+                            password = event.password
+                        )
+                        gitRepoState =
+                            gitRepoState.copy(isGitFetched = true, isGitFetchPending = false)
+                    } else {
+                        Log.i(
+                            "Git",
+                            "Unable to fetch, theres no repository or repo url is invalid."
+                        )
+                    }
+                    gitRepoState = gitRepoState.copy(isGitUpdated = true)
                 }
             }
-
             is GitRepoEvent.LoadGitSettings -> {
                 Log.i("Git", "Loading settings...")
                 val _repoUrl = event.prefs.getString(PREFS_VALUES.GIT_REPO_URL, "")
@@ -113,27 +131,6 @@ class GitViewModel @Inject constructor() : ViewModel() {
                 gitRepoState =
                     gitRepoState.copy(gitRepoUrl = _repoUrl, isGitCloneLoaded = _isRepoCloned)
                 Log.i("Git", "Settings loaded")
-            }
-
-            is GitRepoEvent.GitFetch -> {
-                gitRepoState = gitRepoState.copy(isGitFetchPending = true)
-                if (gitRepoState.isGitCloneLoaded && gitRepoState.gitRepoUrl != "") {
-                    viewModelScope.launch {
-                        gitFetch(
-                            context = event.context,
-                            repoUrl = gitRepoState.gitRepoUrl!!,
-                            login = event.login,
-                            password = event.password
-                        )
-                        gitRepoState = gitRepoState.copy(isGitFetched = true, isGitFetchPending = false)
-                    }
-                } else {
-                    Log.i("Git", "Unable to fetch, theres no repository or repo url is invalid.")
-                }
-            }
-
-            else -> {
-                Log.e("Event handler", "No such event: $event")
             }
         }
     }
