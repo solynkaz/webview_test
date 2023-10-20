@@ -56,7 +56,7 @@ class GitViewModel @Inject constructor() : ViewModel() {
                 viewModelScope.launch {
                     //Get repo url
                     Log.i("Git", "Started getting repo url...")
-                    val gitUrlResponse = getRepoURL(event.bearer, event.context)
+                    getRepoURL(event.bearer, event.context)
                     val pref: SharedPreferences = event.context.getSharedPreferences(
                         "prefs",
                         ComponentActivity.MODE_PRIVATE

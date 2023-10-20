@@ -31,7 +31,6 @@ suspend fun getRepoURL(bearer: String, context: Context): Boolean {
     )
     val currentSetting = pref.getString(PREFS_VALUES.GIT_REPO_URL, "")
     if (currentSetting == "") {
-        // TODO Где брать Bearer?
         try {
             val response = Gson().fromJson(
                 retrofit.postQuery(bearer, paramObject.toString()).body(),

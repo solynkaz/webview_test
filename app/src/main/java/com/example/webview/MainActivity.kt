@@ -37,6 +37,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.example.webview.controller.isOnline
 import com.example.webview.ui.components.MarkDownContent
 import com.example.webview.viewmodel.AppEvent
@@ -54,6 +57,7 @@ class MainActivity : ComponentActivity(
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
+            val navController = rememberNavController()
             val context = LocalContext.current
             val isThereNetworkConnection = remember { mutableStateOf(isOnline(context = context)) }
             val firstLaunch = remember { mutableStateOf(true) }
@@ -61,12 +65,17 @@ class MainActivity : ComponentActivity(
                 "prefs",
                 MODE_PRIVATE
             )
-            Main_screen(
-                isThereNetworkConnection = isThereNetworkConnection,
-                context = context,
-                firstLaunch = firstLaunch,
-                prefs = prefs
-            )
+            //NavHost(navController = navController, startDestination= "Auth") {
+            NavHost(navController = navController, startDestination= "Main_screen") {
+                composable("Main_screen"){
+                    Main_screen(
+                        isThereNetworkConnection = isThereNetworkConnection,
+                        context = context,
+                        firstLaunch = firstLaunch,
+                        prefs = prefs
+                    )
+                }
+            }
         }
     }
 }
@@ -174,7 +183,6 @@ fun LoginCompose(
         }
         Row() {
             Spacer(Modifier.weight(0.5f))
-
             OutlinedTextField(
                 modifier = textFieldModifier
                     .weight(1f)
