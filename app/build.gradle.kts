@@ -7,12 +7,12 @@ plugins {
 
 android {
     namespace = "com.example.webview"
-    compileSdk = 33
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "com.example.webview"
         minSdk = 28
-        targetSdk = 33
+        targetSdk = 34
         versionCode = 1
         versionName = "1.0"
 
@@ -52,6 +52,10 @@ android {
 }
 
 dependencies {
+
+    //Navigation
+    implementation ("androidx.navigation:navigation-compose:2.5.3")
+
     //Hilt
     implementation ("com.google.dagger:hilt-android:2.48.1")
     kapt ("com.google.dagger:hilt-compiler:2.48.1")
