@@ -1,6 +1,8 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    id("com.google.dagger.hilt.android")
+    kotlin("kapt")
 }
 
 android {
@@ -30,11 +32,11 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = "17"
     }
     buildFeatures {
         compose = true
@@ -50,8 +52,28 @@ android {
 }
 
 dependencies {
+    //Hilt
+    implementation ("com.google.dagger:hilt-android:2.48.1")
+    kapt ("com.google.dagger:hilt-compiler:2.48.1")
+    implementation ("androidx.hilt:hilt-navigation-compose:1.0.0")
+
+    //JGit
+    // Если поставить выше - нужен API > 33, иначе проблемы с Input Stream
+    // https://stackoverflow.com/questions/76549421/jgit-failure-in-cloning-repository
+    implementation ("org.eclipse.jgit:org.eclipse.jgit:6.2.0.202206071550-r")
+
+    //RichText (Markdown parser)
     implementation ("com.halilibo.compose-richtext:richtext-commonmark:0.17.0")
     implementation ("com.halilibo.compose-richtext:richtext-ui-material3:0.17.0")
+
+    //Retrofit
+    implementation ("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation ("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation ("com.squareup.retrofit2:converter-scalars:2.9.0")
+    implementation ("com.squareup.okhttp3:okhttp:4.11.0")
+    implementation ("com.squareup.okhttp3:logging-interceptor:4.11.0")
+
+    //Initial
     implementation("androidx.core:core-ktx:1.9.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.1")
     implementation("androidx.activity:activity-compose:1.7.0")
