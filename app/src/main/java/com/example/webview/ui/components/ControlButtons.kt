@@ -26,8 +26,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.webview.AppConsts
-import com.example.webview.isOnline
-import com.example.webview.isRepoEmpty
+import com.example.webview.controller.isOnline
+import com.example.webview.controller.isRepoEmpty
 import com.example.webview.viewmodel.GitViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch

@@ -1,8 +1,9 @@
-package com.example.webview
+package com.example.webview.controller
 
 import android.content.Context
 import android.util.Log
 import androidx.compose.runtime.MutableState
+import com.example.webview.AppConsts
 import java.io.File
 
 fun readFileFromInternalStorage(path: String, currentFileExtension: MutableState<String>, context: Context): String {

@@ -8,18 +8,15 @@ import androidx.activity.ComponentActivity
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.webview.PREFS_VALUES
-import com.example.webview.getRepoURL
-import com.example.webview.gitClone
-import com.example.webview.gitFetch
-import com.example.webview.isRepoEmpty
+import com.example.webview.controller.getRepoURL
+import com.example.webview.controller.gitClone
+import com.example.webview.controller.gitFetch
+import com.example.webview.controller.isRepoEmpty
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 sealed class GitRepoEvent {

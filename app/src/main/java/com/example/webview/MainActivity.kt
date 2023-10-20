@@ -4,17 +4,14 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
-import android.view.KeyEvent
 import android.webkit.ConsoleMessage
 import android.webkit.WebBackForwardList
 import android.webkit.WebChromeClient
-import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -22,7 +19,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -32,7 +28,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.ui.Alignment.Companion.Center
 import androidx.compose.ui.Alignment.Companion.CenterHorizontally
 import androidx.compose.ui.Alignment.Companion.CenterVertically
 import androidx.compose.ui.Modifier
@@ -42,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.webview.controller.isOnline
 import com.example.webview.ui.components.MarkDownContent
 import com.example.webview.viewmodel.AppEvent
 import com.example.webview.viewmodel.AppViewModel
@@ -58,9 +54,9 @@ class MainActivity : ComponentActivity(
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            val isThereNetworkConnection = remember { mutableStateOf(true) }
-            val firstLaunch = remember { mutableStateOf(true) }
             val context = LocalContext.current
+            val isThereNetworkConnection = remember { mutableStateOf(isOnline(context = context)) }
+            val firstLaunch = remember { mutableStateOf(true) }
             val prefs: SharedPreferences = context.getSharedPreferences(
                 "prefs",
                 MODE_PRIVATE
@@ -90,7 +86,6 @@ fun Main_screen(
     val currentFileExtension = remember { mutableStateOf("md") }
 
     if (firstLaunch.value) {
-        isThereNetworkConnection.value = isOnline(context)
         gitViewModel.onEvent(GitRepoEvent.LoadGitSettings(prefs = prefs))
         appViewModel.onEvent(AppEvent.LoadAppSettings(prefs = prefs))
         firstLaunch.value = false
@@ -123,8 +118,6 @@ fun WebView(context: Context, type: String) {
             webViewClient = WebViewClient()
             settings.javaScriptEnabled = true
             settings.useWideViewPort = true
-//            settings.loadWithOverviewMode = true
-//            settings.userAgentString = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36 Edge/16.16299"
             settings.domStorageEnabled = true
             webChromeClient = object : WebChromeClient() {
                 override fun onConsoleMessage(consoleMessage: ConsoleMessage): Boolean {
@@ -165,7 +158,7 @@ fun LoginCompose(
     val textFieldModifier = Modifier.fillMaxWidth()
     Column(modifier = Modifier.fillMaxSize()) {
         Spacer(Modifier.weight(1f))
-        Text("Авторизация", modifier = Modifier.align(CenterHorizontally), fontSize = 24.sp)
+        Text("Git Авторизация", modifier = Modifier.align(CenterHorizontally), fontSize = 24.sp)
         Row() {
             Spacer(Modifier.weight(0.5f))
             OutlinedTextField(
@@ -174,13 +167,11 @@ fun LoginCompose(
                 label = {
                     Text(text = "Логин")
                 },
-
                 value = login.value,
                 onValueChange = { letter -> login.value = letter }
             )
             Spacer(Modifier.weight(0.5f))
         }
-
         Row() {
             Spacer(Modifier.weight(0.5f))
 

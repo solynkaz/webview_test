@@ -1,4 +1,4 @@
-package com.example.webview
+package com.example.webview.controller
 
 import android.content.Context
 import android.content.SharedPreferences
@@ -6,15 +6,15 @@ import android.net.ConnectivityManager
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import com.example.webview.AppConsts
+import com.example.webview.PREFS_VALUES
 import com.example.webview.api.GraphQLInstance
 import com.example.webview.api.models.root
 import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.eclipse.jgit.api.CloneCommand
-import org.eclipse.jgit.api.FetchCommand
 import org.eclipse.jgit.api.Git
-import org.eclipse.jgit.internal.storage.file.FileRepository
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider
 import org.json.JSONObject
@@ -76,7 +76,7 @@ suspend fun gitClone(context: Context, repoUrl: String, login: String, password:
         pref.edit().putBoolean(PREFS_VALUES.IS_REPO_CLONED, true).apply()
         return true
     } catch (ex: Exception) {
-        Toast.makeText(context, "Error while git clone", Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, "Git clone error", Toast.LENGTH_SHORT).show()
         Log.e("Git", ex.toString())
         return false
     }
@@ -86,8 +86,6 @@ suspend fun gitFetch(context: Context, repoUrl: String, login: String, password:
     Log.i("Git", "Start fetching from $repoUrl")
     try {
         val directoryPath = "${AppConsts.GIT_FOLDER}/"
-        val files = context.filesDir
-        Log.i("Git", files.toString())
         val localPath = File(context.filesDir, "$directoryPath/.git")
         val credentialsProvider = UsernamePasswordCredentialsProvider(login, password)
         var git: Git? = null
@@ -96,7 +94,7 @@ suspend fun gitFetch(context: Context, repoUrl: String, login: String, password:
             val repo = FileRepositoryBuilder().setGitDir(localPath).build()
             git = Git.wrap(repo)
         } catch (ex: Exception) {
-            Log.e("Git", "Error while fetch: unable to Git.wrap()")
+            Log.e("Git", "Error while fetching: Invalid git repository")
         }
 
         try {
@@ -108,11 +106,10 @@ suspend fun gitFetch(context: Context, repoUrl: String, login: String, password:
                 Log.i("Git", "Fetch result: $fetchResult")
             }
         } catch (ex: Exception) {
-            Log.e("Git", "Error while fetching: ${ex.toString()}")
+            Log.e("Git", "Error while fetching: $ex")
         } finally {
             git?.close()
         }
-
         return true
     } catch (ex: Exception) {
         Log.e("Git", ex.toString())
@@ -125,11 +122,7 @@ fun isOnline(context: Context): Boolean {
         context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
     val capabilities =
         connectivityManager.getNetworkCapabilities(connectivityManager.activeNetwork)
-    return if (capabilities == null) {
-        Log.i("App", "No internet connection available.")
-        false
-    } else {
-        Log.i("App", "Internet connection is available")
-        true
-    }
+    Log.i("Network", "Network availiable = ${capabilities != null}")
+
+    return capabilities != null
 }
