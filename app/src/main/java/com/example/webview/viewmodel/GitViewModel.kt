@@ -20,12 +20,18 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 sealed class GitRepoEvent {
-    data class GitUpdate(
+    data class GitClone(
         val bearer: String,
         val context: Context,
         val login: String,
         val password: String
     ) : GitRepoEvent()
+
+    data class GitFetch(
+        val context: Context,
+        val login: String,
+        val password: String
+    ): GitRepoEvent()
 
     data class LoadGitSettings(val prefs: SharedPreferences) : GitRepoEvent()
 }
@@ -51,7 +57,7 @@ class GitViewModel @Inject constructor() : ViewModel() {
 
     fun onEvent(event: GitRepoEvent) {
         when (event) {
-            is GitRepoEvent.GitUpdate -> {
+            is GitRepoEvent.GitClone -> {
                 gitRepoState = gitRepoState.copy(isGitUpdatePending = true,isGetRepoUrlPending = true)
                 viewModelScope.launch {
                     //Get repo url
@@ -71,55 +77,12 @@ class GitViewModel @Inject constructor() : ViewModel() {
                     )
 
                     //Try git clone
-                    if (isRepoEmpty(event.context)) {
-                        Log.i("Git", "Start cloning repository...")
-                        gitRepoState = gitRepoState.copy(isGitClonePending = true)
-                        val response = gitClone(
-                            context = event.context,
-                            repoUrl = gitRepoState.gitRepoUrl!!,
-                            login = event.login,
-                            password = event.password
-                        )
-                        if (response) {
-                            gitRepoState =
-                                gitRepoState.copy(
-                                    isGitClonePending = false,
-                                    isGitCloneLoaded = true
-                                )
-                            Log.i("Git", "Cloned with success")
-                        } else {
-                            Toast.makeText(
-                                event.context,
-                                "Error while git clone",
-                                Toast.LENGTH_SHORT
-                            )
-                                .show()
-                            Log.i("Git", "Error while git clone")
-                            gitRepoState = gitRepoState.copy(isGitClonePending = false)
-                        }
-                    } else {
-                        gitRepoState = gitRepoState.copy(isGitCloneLoaded = true)
-                        Log.i("Git", "Git repository already exists, clone was not called")
-                    }
-
-                    // Try git fetch
-                    gitRepoState = gitRepoState.copy(isGitFetchPending = true)
-                    if (gitRepoState.isGitCloneLoaded && gitRepoState.gitRepoUrl != "") {
-                        gitFetch(
-                            context = event.context,
-                            repoUrl = gitRepoState.gitRepoUrl!!,
-                            login = event.login,
-                            password = event.password
-                        )
-                        gitRepoState =
-                            gitRepoState.copy(isGitFetched = true, isGitFetchPending = false)
-                    } else {
-                        Log.i(
-                            "Git",
-                            "Unable to fetch, theres no repository or repo url is invalid."
-                        )
-                    }
-                    gitRepoState = gitRepoState.copy(isGitUpdated = true)
+                    doGitClone(event.context, event.login, event.password)
+                }
+            }
+            is GitRepoEvent.GitFetch -> {
+                viewModelScope.launch {
+                    doGitFetch(event.context, event.login, event.password)
                 }
             }
             is GitRepoEvent.LoadGitSettings -> {
@@ -131,5 +94,58 @@ class GitViewModel @Inject constructor() : ViewModel() {
                 Log.i("Git", "Settings loaded")
             }
         }
+    }
+
+    suspend fun doGitClone(context: Context, login: String, password: String) {
+        if (isRepoEmpty(context)) {
+            Log.i("Git", "Start cloning repository...")
+            gitRepoState = gitRepoState.copy(isGitClonePending = true)
+            val response = gitClone(
+                context = context,
+                repoUrl = gitRepoState.gitRepoUrl!!,
+                login = login,
+                password = password
+            )
+            if (response) {
+                gitRepoState =
+                    gitRepoState.copy(
+                        isGitClonePending = false,
+                        isGitCloneLoaded = true
+                    )
+                Log.i("Git", "Cloned with success")
+            } else {
+                Toast.makeText(
+                    context,
+                    "Error while git clone",
+                    Toast.LENGTH_SHORT
+                )
+                    .show()
+                Log.i("Git", "Error while git clone")
+                gitRepoState = gitRepoState.copy(isGitClonePending = false)
+            }
+        } else {
+            gitRepoState = gitRepoState.copy(isGitCloneLoaded = true)
+            Log.i("Git", "Git repository already exists, clone was not called")
+        }
+    }
+
+    suspend fun doGitFetch(context: Context, login: String, password: String) {
+        gitRepoState = gitRepoState.copy(isGitFetchPending = true)
+        if (gitRepoState.isGitCloneLoaded && gitRepoState.gitRepoUrl != "") {
+            gitFetch(
+                context = context,
+                repoUrl = gitRepoState.gitRepoUrl!!,
+                login = login,
+                password = password
+            )
+            gitRepoState =
+                gitRepoState.copy(isGitFetched = true, isGitFetchPending = false)
+        } else {
+            Log.i(
+                "Git",
+                "Unable to fetch, theres no repository or repo url is invalid."
+            )
+        }
+        gitRepoState = gitRepoState.copy(isGitUpdated = true)
     }
 }

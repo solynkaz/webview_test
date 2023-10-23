@@ -35,7 +35,6 @@ fun MarkDownContent(
 ) {
     val context = LocalContext.current
     val firstLoad = remember { mutableStateOf(true) }
-    val dirs = context.filesDir
     val scrollState = remember { mutableStateOf(ScrollState(0)) }
 
     if (firstLoad.value) {
@@ -48,47 +47,25 @@ fun MarkDownContent(
         )
         firstLoad.value = false
     }
-    Scaffold(
-        content = { padding ->
-            ModalNavigationDrawer(
-                drawerContent = {
-                    ModalDrawerSheet {
-                        for (file in dirs.listFiles()) {
-                            if (file.isDirectory) {
-                                Text("File: ${file.name}")
-                            } else if (file.isFile) {
-                                // Это файл
-                                Text("Folder: ${file.name}")
-                            }
-                        }
-                    }
-                }
-            ) {
-                RichText(
-                    modifier = Modifier
-                        .padding(padding)
-                        .padding(all = 15.dp)
-                        .verticalScroll(scrollState.value)
-                ) {
-                    Markdown(
-                        content = mdModel.mdState.data,
-                        onLinkClicked = { link ->
-                            scrollState.value = ScrollState(0)
-                            currentFilePath.value = link
-                            Log.i("MarkDown", "Link changed to ${currentFilePath.value}")
-                            mdModel.onEvent(
-                                MDEvent.loadFile(
-                                    currentFileExtension = currentFileExtension,
-                                    currentFilePath = currentFilePath,
-                                    context = context,
-                                )
-                            )
-                        })
-                }
-            }
-        },
-        modifier = Modifier
-            .padding(1.dp)
-            .fillMaxSize()
-    )
+        RichText(
+            modifier = Modifier
+                .padding()
+                .padding(all = 15.dp)
+                .verticalScroll(scrollState.value)
+        ) {
+            Markdown(
+                content = mdModel.mdState.data,
+                onLinkClicked = { link ->
+                    scrollState.value = ScrollState(0)
+                    currentFilePath.value = link
+                    Log.i("MarkDown", "Link changed to ${currentFilePath.value}")
+                    mdModel.onEvent(
+                        MDEvent.loadFile(
+                            currentFileExtension = currentFileExtension,
+                            currentFilePath = currentFilePath,
+                            context = context,
+                        )
+                    )
+                })
+        }
 }

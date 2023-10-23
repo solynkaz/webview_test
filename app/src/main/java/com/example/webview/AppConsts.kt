@@ -18,11 +18,18 @@ object AppConsts {
         }
     """
     const val EMPTY_MD_STRING = "Нет данных для отображения"
+
 }
 object PREFS_VALUES {
+    const val PAGE_TITLE = "PAGE_TITLE"
     const val GIT_REPO_URL = "GIT_REPO_URL"
     const val IS_REPO_CLONED = "IS_REPO_CLONED"
     const val GITLAB_LOGIN = "PREF_LOGIN"
     const val GITLAB_PASS = "PREF_PASS"
     const val WIKI_JS_BEARER = "PREF_WIKI_JS_BEARER"
+}
+
+object PAGES {
+    const val MAIN_MENU = "Главная"
+    const val SETTINGS = "Настройки"
 }
