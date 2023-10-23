@@ -8,6 +8,7 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import com.example.webview.AppConsts
 import com.example.webview.PREFS_VALUES
+import com.example.webview.PREFS_VALUES.PREFS
 import com.example.webview.api.GraphQLInstance
 import com.example.webview.api.models.root
 import com.google.gson.Gson
@@ -26,7 +27,7 @@ suspend fun getRepoURL(bearer: String, context: Context): Boolean {
     val responseRepoUrl: String
     paramObject.put("query", AppConsts.GET_REPO_URL_QUERY)
     val pref: SharedPreferences = context.getSharedPreferences(
-        "prefs",
+        PREFS,
         ComponentActivity.MODE_PRIVATE
     )
     val currentSetting = pref.getString(PREFS_VALUES.GIT_REPO_URL, "")
@@ -69,7 +70,7 @@ suspend fun gitClone(context: Context, repoUrl: String, login: String, password:
         }
         Toast.makeText(context, "Git was cloned with success", Toast.LENGTH_SHORT).show()
         val pref: SharedPreferences = context.getSharedPreferences(
-            "prefs",
+            PREFS,
             ComponentActivity.MODE_PRIVATE
         )
         pref.edit().putBoolean(PREFS_VALUES.IS_REPO_CLONED, true).apply()

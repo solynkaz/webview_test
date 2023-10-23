@@ -32,6 +32,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -47,6 +48,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.webview.PREFS_VALUES.PREFS
 import com.example.webview.controller.isOnline
 import com.example.webview.ui.components.Back_Icon
 import com.example.webview.ui.components.MarkDownContent
@@ -61,8 +63,7 @@ import kotlinx.coroutines.launch
 
 
 @AndroidEntryPoint
-class MainActivity : ComponentActivity(
-) {
+class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -75,7 +76,7 @@ class MainActivity : ComponentActivity(
             val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
             val scope = rememberCoroutineScope()
             val prefs: SharedPreferences = context.getSharedPreferences(
-                "prefs",
+                PREFS,
                 MODE_PRIVATE
             )
             Scaffold(
@@ -118,7 +119,6 @@ class MainActivity : ComponentActivity(
                                 Main_Screen(
                                     isThereNetworkConnection = isThereNetworkConnection,
                                     context = context,
-                                    firstLaunch = firstLaunch,
                                     prefs = prefs,
                                     scaffoldPadding = padding
                                 )
@@ -153,7 +153,6 @@ class MainActivity : ComponentActivity(
     fun Main_Screen(
         isThereNetworkConnection: MutableState<Boolean>,
         context: Context,
-        firstLaunch: MutableState<Boolean>,
         prefs: SharedPreferences,
         scaffoldPadding: PaddingValues,
         gitViewModel: GitViewModel = hiltViewModel(),
@@ -162,10 +161,11 @@ class MainActivity : ComponentActivity(
         val currentFile = remember { mutableStateOf("home") }
         val currentFileExtension = remember { mutableStateOf("md") }
 
-        if (firstLaunch.value) {
+        //Вызов один раз, для вызова при изменении чего-то - вместо Unit
+        // указывается элемент за изменением которого необходимо следить
+        LaunchedEffect(Unit) {
             gitViewModel.onEvent(GitRepoEvent.LoadGitSettings(prefs = prefs))
-            appViewModel.onEvent(AppEvent.LoadAppSettings(prefs = prefs))
-            firstLaunch.value = false
+            appViewModel.onEvent(AppEvent.LoadSettings(prefs = prefs))
         }
         Box(
             Modifier

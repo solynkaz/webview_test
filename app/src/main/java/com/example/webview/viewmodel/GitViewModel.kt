@@ -11,6 +11,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.webview.PREFS_VALUES
+import com.example.webview.PREFS_VALUES.PREFS
 import com.example.webview.controller.getRepoURL
 import com.example.webview.controller.gitClone
 import com.example.webview.controller.gitFetch
@@ -64,7 +65,7 @@ class GitViewModel @Inject constructor() : ViewModel() {
                     Log.i("Git", "Started getting repo url...")
                     getRepoURL(event.bearer, event.context)
                     val pref: SharedPreferences = event.context.getSharedPreferences(
-                        "prefs",
+                        PREFS,
                         ComponentActivity.MODE_PRIVATE
                     )
                     gitRepoState = gitRepoState.copy(
