@@ -9,18 +9,30 @@ import android.webkit.WebBackForwardList
 import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
@@ -28,20 +40,21 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.Alignment.Companion.Center
 import androidx.compose.ui.Alignment.Companion.CenterHorizontally
 import androidx.compose.ui.Alignment.Companion.CenterVertically
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.webview.controller.isOnline
+import com.example.webview.ui.components.LoginCompose
 import com.example.webview.ui.components.MarkDownContent
+import com.example.webview.ui.components.Settings_Screen
 import com.example.webview.viewmodel.AppEvent
 import com.example.webview.viewmodel.AppViewModel
 import com.example.webview.viewmodel.GitRepoEvent
@@ -65,15 +78,23 @@ class MainActivity : ComponentActivity(
                 "prefs",
                 MODE_PRIVATE
             )
-            //NavHost(navController = navController, startDestination= "Auth") {
-            NavHost(navController = navController, startDestination= "Main_screen") {
-                composable("Main_screen"){
-                    Main_screen(
+            NavHost(navController = navController, startDestination = "Main_Screen") {
+                composable("Main_Screen") {
+                    Main_Screen(
                         isThereNetworkConnection = isThereNetworkConnection,
                         context = context,
                         firstLaunch = firstLaunch,
-                        prefs = prefs
+                        prefs = prefs,
+                        onNavToSettings = { navController.navigate("Settings_Screen") }
                     )
+                    BackHandler(true) {
+                    }
+                }
+                composable("Settings_Screen") {
+                    Settings_Screen()
+                    BackHandler(true) {
+                        navController.popBackStack()
+                    }
                 }
             }
         }
@@ -82,46 +103,43 @@ class MainActivity : ComponentActivity(
 
 
 @Composable
-fun Main_screen(
+fun Main_Screen(
     isThereNetworkConnection: MutableState<Boolean>,
     context: Context,
     firstLaunch: MutableState<Boolean>,
     prefs: SharedPreferences,
     gitViewModel: GitViewModel = hiltViewModel(),
-    appViewModel: AppViewModel = hiltViewModel()
+    appViewModel: AppViewModel = hiltViewModel(),
+    onNavToSettings: () -> Unit = {}
 ) {
-    val buttonsVisibility = remember { mutableStateOf(true) }
     val currentFile = remember { mutableStateOf("home") }
     val currentFileExtension = remember { mutableStateOf("md") }
+
+    FloatingActionButton(onClick = { onNavToSettings() }) { Text("Chto") }
 
     if (firstLaunch.value) {
         gitViewModel.onEvent(GitRepoEvent.LoadGitSettings(prefs = prefs))
         appViewModel.onEvent(AppEvent.LoadAppSettings(prefs = prefs))
         firstLaunch.value = false
     }
-
-    if (appViewModel.appState.login == "") {
-        LoginCompose(isThereNetworkConnection)
+    if (isThereNetworkConnection.value) {
+        WebViewCompose(context = context, type = "web")
     } else {
-        if (isThereNetworkConnection.value) {
-            WebView(context = context, type = "web")
-        } else {
-            if (currentFileExtension.value == "md") {
-                MarkDownContent(
-                    buttonsVisibility,
-                    currentFileExtension = currentFileExtension,
-                    currentFilePath = currentFile
-                )
-            } else if (currentFileExtension.value == "html") {
-                WebView(context = context, type = "file")
-            }
+        if (currentFileExtension.value == "md") {
+            MarkDownContent(
+                currentFileExtension = currentFileExtension,
+                currentFilePath = currentFile
+            )
+        } else if (currentFileExtension.value == "html") {
+            WebViewCompose(context = context, type = "html")
         }
     }
 }
 
 @Composable
-fun WebView(context: Context, type: String) {
-    val mdState: MDState = hiltViewModel<MarkdownViewModel>().mdState
+fun WebViewCompose(context: Context, type: String) {
+    val mdModel: MarkdownViewModel = hiltViewModel()
+    val data = remember { mutableStateOf(mdModel.mdState.data) }
     val webView = remember {
         WebView(context).apply {
             webViewClient = WebViewClient()
@@ -143,10 +161,10 @@ fun WebView(context: Context, type: String) {
             .fillMaxSize(),
         factory = { webView },
         update = {
-            if (type == "file") {
-                it.loadDataWithBaseURL(null, mdState.data, "text/html", "UTF-8", null)
-            } else {
+            if (type == "web") {
                 it.loadUrl(AppConsts.KB_URL)
+            } else if (type == "html") {
+                it.loadDataWithBaseURL(null, data.value, "text/html", "UTF-8", null)
             }
         })
     BackHandler(enabled = webHistory?.currentIndex != 0) {
@@ -154,75 +172,22 @@ fun WebView(context: Context, type: String) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LoginCompose(
-    isThereNetworkConnection: MutableState<Boolean>,
-    appViewModel: AppViewModel = hiltViewModel(),
-    gitViewModel: GitViewModel = hiltViewModel()
-) {
-    val login = remember { mutableStateOf("zma@sibdigital.net") }
-    val password = remember { mutableStateOf("J0tul8878q1e3") }
+fun FloatingButton() {
     val context = LocalContext.current
-    val textFieldModifier = Modifier.fillMaxWidth()
-    Column(modifier = Modifier.fillMaxSize()) {
-        Spacer(Modifier.weight(1f))
-        Text("Git Авторизация", modifier = Modifier.align(CenterHorizontally), fontSize = 24.sp)
-        Row() {
-            Spacer(Modifier.weight(0.5f))
-            OutlinedTextField(
-                modifier = textFieldModifier.weight(1f),
-                singleLine = true,
-                label = {
-                    Text(text = "Логин")
-                },
-                value = login.value,
-                onValueChange = { letter -> login.value = letter }
-            )
-            Spacer(Modifier.weight(0.5f))
-        }
-        Row() {
-            Spacer(Modifier.weight(0.5f))
-            OutlinedTextField(
-                modifier = textFieldModifier
-                    .weight(1f)
-                    .align(CenterVertically),
-                singleLine = true,
-                visualTransformation = PasswordVisualTransformation(),
-                label = {
-                    Text(text = "Пароль")
-                },
-                value = password.value,
-                onValueChange = { letter -> password.value = letter }
-            )
-            Spacer(Modifier.weight(0.5f))
-        }
-        Row() {
-            Spacer(Modifier.weight(0.5f))
-            Button(
-                onClick = {
-                    appViewModel.onEvent(AppEvent.Login(login.value, password.value))
-                    if (!gitViewModel.gitRepoState.isGitUpdatePending && isThereNetworkConnection.value) {
-                        gitViewModel.onEvent(
-                            GitRepoEvent.GitUpdate(
-                                bearer = appViewModel.appState.bearer,
-                                context = context,
-                                login = appViewModel.appState.login,
-                                password = appViewModel.appState.password,
-                            )
-                        )
-                    }
-                    //TODO Проверка на валидность
-                }, modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(0.8f)
-                    .padding(top = 15.dp)
-            ) {
-                Text("Войти")
-            }
-            Spacer(Modifier.weight(0.5f))
-        }
-        Spacer(Modifier.weight(1f))
+    FloatingActionButton(
+        onClick = {
+            Toast.makeText(context, "Clicked float button", Toast.LENGTH_SHORT).show()
+        },
+        modifier = Modifier
+            .padding(16.dp)
+            .size(56.dp)
+            .absoluteOffset(16.dp, 16.dp) // Adjust position as needed
+    ) {
+        Icon(
+            imageVector = Icons.Default.Add,
+            contentDescription = null,
+        )
     }
 }
 

@@ -9,9 +9,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.webview.AppConsts.EMPTY_MD_STRING
 import com.example.webview.controller.readFileFromInternalStorage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
+import java.io.FileNotFoundException
 import javax.inject.Inject
 
 sealed class MDEvent {
@@ -44,7 +46,9 @@ class MarkdownViewModel @Inject constructor() : ViewModel() {
                             path = event.currentFilePath.value
                         )
                         mdState = mdState.copy(data = data)
-                    } catch (ex: Exception) {
+                    }
+                    catch (ex: Exception) {
+                        mdState = mdState.copy(data = EMPTY_MD_STRING)
                         Toast.makeText(event.context, "Ссылка недоступна", Toast.LENGTH_SHORT).show()
                         Log.e("File system", ex.toString())
                     }

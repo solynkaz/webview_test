@@ -17,6 +17,7 @@ object AppConsts {
           }
         }
     """
+    const val EMPTY_MD_STRING = "Нет данных для отображения"
 }
 object PREFS_VALUES {
     const val GIT_REPO_URL = "GIT_REPO_URL"

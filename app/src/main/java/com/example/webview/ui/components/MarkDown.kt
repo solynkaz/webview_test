@@ -2,6 +2,7 @@ package com.example.webview.ui.components
 
 import android.util.Log
 import androidx.compose.foundation.ScrollState
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -28,16 +29,14 @@ import com.halilibo.richtext.ui.RichText
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MarkDownContent(
-    buttonsVisibility: MutableState<Boolean>,
     currentFilePath: MutableState<String>,
     currentFileExtension: MutableState<String>,
     mdModel: MarkdownViewModel = hiltViewModel()
 ) {
-    val mdState = mdModel.mdState
     val context = LocalContext.current
     val firstLoad = remember { mutableStateOf(true) }
     val dirs = context.filesDir
-    var scrollState = remember { mutableStateOf(ScrollState(0)) }
+    val scrollState = remember { mutableStateOf(ScrollState(0)) }
 
     if (firstLoad.value) {
         mdModel.onEvent(
