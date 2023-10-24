@@ -18,7 +18,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -39,7 +39,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.ui.Alignment.Companion.BottomStart
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -50,14 +49,14 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.webview.PREFS_VALUES.PREFS
 import com.example.webview.controller.isOnline
-import com.example.webview.ui.components.Back_Icon
-import com.example.webview.ui.components.MarkDownContent
-import com.example.webview.ui.components.Settings_Screen
+import com.example.webview.ui.MarkDownContent
+import com.example.webview.ui.Settings_Screen
 import com.example.webview.viewmodel.AppEvent
 import com.example.webview.viewmodel.AppViewModel
 import com.example.webview.viewmodel.GitRepoEvent
 import com.example.webview.viewmodel.GitViewModel
 import com.example.webview.viewmodel.MarkdownViewModel
+import com.google.android.material.progressindicator.LinearProgressIndicator
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -70,9 +69,9 @@ class MainActivity : ComponentActivity() {
         setContent {
             val appViewModel: AppViewModel = hiltViewModel()
             val navController = rememberNavController()
+            val isLoading = remember { mutableStateOf(false) }
             val context = LocalContext.current
             val isThereNetworkConnection = remember { mutableStateOf(isOnline(context = context)) }
-            val firstLaunch = remember { mutableStateOf(true) }
             val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
             val scope = rememberCoroutineScope()
             val prefs: SharedPreferences = context.getSharedPreferences(
@@ -82,6 +81,11 @@ class MainActivity : ComponentActivity() {
             Scaffold(
                 topBar = {
                     TopAppBar(
+                        navigationIcon = {
+                            if (isLoading.value) {
+                                CircularProgressIndicator()
+                            }
+                        },
                         title = { Text(appViewModel.appState.pageTitle) },
                         colors = TopAppBarDefaults.smallTopAppBarColors(
                             containerColor = MaterialTheme.colorScheme.primaryContainer,
@@ -103,7 +107,6 @@ class MainActivity : ComponentActivity() {
                             }
                         },
                     )
-
                 },
                 content = { padding ->
                     ModalNavigationDrawer(
@@ -112,7 +115,8 @@ class MainActivity : ComponentActivity() {
                                 Text("Оффлайн версия")
                             }
                         },
-                        drawerState = drawerState
+                        drawerState = drawerState,
+                        gesturesEnabled = !isThereNetworkConnection.value
                     ) {
                         NavHost(navController = navController, startDestination = "Main_Screen") {
                             composable("Main_Screen") {
@@ -122,7 +126,9 @@ class MainActivity : ComponentActivity() {
                                     prefs = prefs,
                                     scaffoldPadding = padding
                                 )
-                                BackHandler(true) {
+                                if (!isThereNetworkConnection.value) {
+                                    BackHandler(true) {
+                                    }
                                 }
                             }
                             composable("Settings_Screen") {
@@ -148,7 +154,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-
     @Composable
     fun Main_Screen(
         isThereNetworkConnection: MutableState<Boolean>,
@@ -164,8 +169,21 @@ class MainActivity : ComponentActivity() {
         //Вызов один раз, для вызова при изменении чего-то - вместо Unit
         // указывается элемент за изменением которого необходимо следить
         LaunchedEffect(Unit) {
-            gitViewModel.onEvent(GitRepoEvent.LoadGitSettings(prefs = prefs))
+            val appState = appViewModel.appState
+            gitViewModel.onEvent(
+                GitRepoEvent.GetRepoUrl(
+                    bearer = appState.bearer,
+                    context = context
+                )
+            )
             appViewModel.onEvent(AppEvent.LoadSettings(prefs = prefs))
+            gitViewModel.onEvent(
+                GitRepoEvent.GitFetch(
+                    login = appState.login,
+                    password = appState.password,
+                    context = context
+                )
+            )
         }
         Box(
             Modifier
@@ -173,7 +191,7 @@ class MainActivity : ComponentActivity() {
                 .padding(scaffoldPadding)
         ) {
             if (isThereNetworkConnection.value) {
-                WebViewCompose(context = context, type = "web")
+                WebViewCompose(context = context, type = "web", scaffoldPadding)
             } else {
                 if (currentFileExtension.value == "md") {
                     MarkDownContent(
@@ -181,14 +199,14 @@ class MainActivity : ComponentActivity() {
                         currentFilePath = currentFile
                     )
                 } else if (currentFileExtension.value == "html") {
-                    WebViewCompose(context = context, type = "html")
+                    WebViewCompose(context = context, type = "html", scaffoldPadding)
                 }
             }
         }
     }
 
     @Composable
-    fun WebViewCompose(context: Context, type: String) {
+    fun WebViewCompose(context: Context, type: String, paddingValues: PaddingValues) {
         val mdModel: MarkdownViewModel = hiltViewModel()
         val data = remember { mutableStateOf(mdModel.mdState.data) }
         val webView = remember {
@@ -220,22 +238,6 @@ class MainActivity : ComponentActivity() {
             })
         BackHandler(enabled = webHistory?.currentIndex != 0) {
             webView.goBack()
-        }
-    }
-
-    @Composable
-    fun FloatingButton(toSettings: () -> Unit) {
-        Box(Modifier.fillMaxSize()) {
-            Button(
-                onClick = {
-                    toSettings()
-                },
-                modifier = Modifier
-                    .padding(5.dp)
-                    .align(BottomStart),
-            ) {
-                Text("Настройки")
-            }
         }
     }
 }

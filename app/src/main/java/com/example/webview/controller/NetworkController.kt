@@ -30,23 +30,19 @@ suspend fun getRepoURL(bearer: String, context: Context): Boolean {
         PREFS,
         ComponentActivity.MODE_PRIVATE
     )
-    val currentSetting = pref.getString(PREFS_VALUES.GIT_REPO_URL, "")
-    if (currentSetting == "") {
-        try {
-            val response = Gson().fromJson(
-                retrofit.postQuery(bearer, paramObject.toString()).body(),
-                root::class.java
-            )
-            val target = response?.data?.storage?.targets?.find { it.title == "Git" }
-            responseRepoUrl = target?.config?.find { it.key == "repoUrl" }?.value?.let {
-                JSONObject(it).getString("value").removeSuffix(".git")
-            }!!
-            pref.edit().putString(PREFS_VALUES.GIT_REPO_URL, responseRepoUrl).apply()
-
-        } catch (e: java.lang.Exception) {
-            Log.e("Wiki", e.toString())
-            return false
-        }
+    try {
+        val response = Gson().fromJson(
+            retrofit.postQuery(bearer, paramObject.toString()).body(),
+            root::class.java
+        )
+        val target = response?.data?.storage?.targets?.find { it.title == "Git" }
+        responseRepoUrl = target?.config?.find { it.key == "repoUrl" }?.value?.let {
+            JSONObject(it).getString("value").removeSuffix(".git")
+        }!!
+        pref.edit().putString(PREFS_VALUES.GIT_REPO_URL, responseRepoUrl).apply()
+    } catch (e: java.lang.Exception) {
+        Log.e("Wiki", e.toString())
+        return false
     }
     return true
 }
@@ -69,11 +65,6 @@ suspend fun gitClone(context: Context, repoUrl: String, login: String, password:
             cloneCommand.call().close()
         }
         Toast.makeText(context, "Git was cloned with success", Toast.LENGTH_SHORT).show()
-        val pref: SharedPreferences = context.getSharedPreferences(
-            PREFS,
-            ComponentActivity.MODE_PRIVATE
-        )
-        pref.edit().putBoolean(PREFS_VALUES.IS_REPO_CLONED, true).apply()
         return true
     } catch (ex: Exception) {
         Toast.makeText(context, "Git clone error", Toast.LENGTH_SHORT).show()

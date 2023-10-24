@@ -1,6 +1,7 @@
-package com.example.webview.ui.components
+package com.example.webview.ui
 
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -47,15 +48,18 @@ fun MarkDownContent(
         )
         firstLoad.value = false
     }
-        RichText(
-            modifier = Modifier
-                .padding()
-                .padding(all = 15.dp)
-                .verticalScroll(scrollState.value)
-        ) {
-            Markdown(
-                content = mdModel.mdState.data,
-                onLinkClicked = { link ->
+    RichText(
+        modifier = Modifier
+            .padding()
+            .padding(all = 15.dp)
+            .verticalScroll(scrollState.value)
+    ) {
+        Markdown(
+            content = mdModel.mdState.data,
+            onLinkClicked = { link ->
+                if (link.startsWith("http")) {
+                    Toast.makeText(context, "Ссылка недоступна.", Toast.LENGTH_SHORT).show()
+                } else {
                     scrollState.value = ScrollState(0)
                     currentFilePath.value = link
                     Log.i("MarkDown", "Link changed to ${currentFilePath.value}")
@@ -66,6 +70,7 @@ fun MarkDownContent(
                             context = context,
                         )
                     )
-                })
-        }
+                }
+            })
+    }
 }

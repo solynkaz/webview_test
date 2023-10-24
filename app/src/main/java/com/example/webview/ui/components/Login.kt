@@ -77,10 +77,10 @@ fun LoginCompose(
                     if (!gitViewModel.gitRepoState.isGitUpdatePending && isThereNetworkConnection.value) {
                         gitViewModel.onEvent(
                             GitRepoEvent.GitClone(
-                                bearer = appViewModel.appState.bearer,
                                 context = context,
                                 login = appViewModel.appState.login,
                                 password = appViewModel.appState.password,
+                                urlRepo = gitViewModel.gitRepoState.gitRepoUrl
                             )
                         )
                     }

@@ -19,6 +19,13 @@ fun readFileFromInternalStorage(path: String, currentFileExtension: MutableState
     return parsedFileString
 }
 
+fun clearGitRepo(context: Context) {
+    val filePath = "${context.filesDir}/${AppConsts.GIT_FOLDER}";
+    val repo = File(filePath)
+    repo.deleteRecursively()
+    Log.i("Git", "Cache cleared.")
+}
+
 fun isRepoEmpty(context: Context): Boolean {
     val filePath = "${context.filesDir}/${AppConsts.GIT_FOLDER}";
     val repoFiles = File(filePath).listFiles()

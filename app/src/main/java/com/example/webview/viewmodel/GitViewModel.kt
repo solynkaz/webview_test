@@ -22,10 +22,10 @@ import javax.inject.Inject
 
 sealed class GitRepoEvent {
     data class GitClone(
-        val bearer: String,
         val context: Context,
         val login: String,
-        val password: String
+        val password: String,
+        val urlRepo: String
     ) : GitRepoEvent()
 
     data class GitFetch(
@@ -33,12 +33,16 @@ sealed class GitRepoEvent {
         val login: String,
         val password: String
     ): GitRepoEvent()
+    data class GetRepoUrl(
+        val context: Context,
+        val bearer: String
+    ): GitRepoEvent()
 
     data class LoadGitSettings(val prefs: SharedPreferences) : GitRepoEvent()
 }
 
 data class GitRepoState(
-    val gitRepoUrl: String? = "",
+    val gitRepoUrl: String = "",
     val isGetRepoUrlPending: Boolean = false,
     val isGitUpdated: Boolean = false,
     val isGitUpdatePending: Boolean = false,
@@ -58,7 +62,7 @@ class GitViewModel @Inject constructor() : ViewModel() {
 
     fun onEvent(event: GitRepoEvent) {
         when (event) {
-            is GitRepoEvent.GitClone -> {
+            is GitRepoEvent.GetRepoUrl -> {
                 gitRepoState = gitRepoState.copy(isGitUpdatePending = true,isGetRepoUrlPending = true)
                 viewModelScope.launch {
                     //Get repo url
@@ -70,15 +74,12 @@ class GitViewModel @Inject constructor() : ViewModel() {
                     )
                     gitRepoState = gitRepoState.copy(
                         isGetRepoUrlPending = false,
-                        gitRepoUrl = pref.getString(PREFS_VALUES.GIT_REPO_URL, "")
+                        gitRepoUrl = pref.getString(PREFS_VALUES.GIT_REPO_URL, "")!!
                     )
                     Log.i(
                         "Git",
                         "Repo url updated: ${pref.getString(PREFS_VALUES.GIT_REPO_URL, "")}"
                     )
-
-                    //Try git clone
-                    doGitClone(event.context, event.login, event.password)
                 }
             }
             is GitRepoEvent.GitFetch -> {
@@ -86,24 +87,29 @@ class GitViewModel @Inject constructor() : ViewModel() {
                     doGitFetch(event.context, event.login, event.password)
                 }
             }
+            is GitRepoEvent.GitClone -> {
+                viewModelScope.launch {
+                    doGitClone(context = event.context, login = event.login, password = event.password, gitRepoUrl = event.urlRepo)
+                }
+            }
             is GitRepoEvent.LoadGitSettings -> {
                 Log.i("Git", "Loading settings...")
-                val _repoUrl = event.prefs.getString(PREFS_VALUES.GIT_REPO_URL, "")
-                val _isRepoCloned = event.prefs.getBoolean(PREFS_VALUES.IS_REPO_CLONED, false)
+                val repoUrl = event.prefs.getString(PREFS_VALUES.GIT_REPO_URL, "")
+                Log.i("Git", "Putting $repoUrl into state")
                 gitRepoState =
-                    gitRepoState.copy(gitRepoUrl = _repoUrl, isGitCloneLoaded = _isRepoCloned)
+                    gitRepoState.copy(gitRepoUrl = repoUrl!!)
                 Log.i("Git", "Settings loaded")
             }
         }
     }
 
-    suspend fun doGitClone(context: Context, login: String, password: String) {
+    private suspend fun doGitClone(context: Context, login: String, gitRepoUrl: String, password: String) {
         if (isRepoEmpty(context)) {
-            Log.i("Git", "Start cloning repository...")
+            Log.i("Git", "Start cloning repository with $login : $password by URL $gitRepoUrl")
             gitRepoState = gitRepoState.copy(isGitClonePending = true)
             val response = gitClone(
                 context = context,
-                repoUrl = gitRepoState.gitRepoUrl!!,
+                repoUrl = gitRepoUrl,
                 login = login,
                 password = password
             )
@@ -130,7 +136,7 @@ class GitViewModel @Inject constructor() : ViewModel() {
         }
     }
 
-    suspend fun doGitFetch(context: Context, login: String, password: String) {
+    private suspend fun doGitFetch(context: Context, login: String, password: String) {
         gitRepoState = gitRepoState.copy(isGitFetchPending = true)
         if (gitRepoState.isGitCloneLoaded && gitRepoState.gitRepoUrl != "") {
             gitFetch(
