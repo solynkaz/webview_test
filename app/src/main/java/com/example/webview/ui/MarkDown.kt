@@ -30,7 +30,7 @@ import com.halilibo.richtext.ui.RichText
 @Composable
 fun MarkDownContent(
     currentFilePath: MutableState<String>,
-    currentFileExtension: MutableState<String>,
+    currentFileExtension: MutableState<String>, // Лучше вынести в viewModel, сейчас много связей между мейн активити и навигатором в сайдменю
     mdModel: MarkdownViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current

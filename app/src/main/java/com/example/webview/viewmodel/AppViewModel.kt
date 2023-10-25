@@ -14,6 +14,7 @@ import com.example.webview.PAGES
 import com.example.webview.PREFS_VALUES
 import com.example.webview.PREFS_VALUES.PREFS
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.io.File
 import javax.inject.Inject
 
 sealed class AppEvent {
@@ -24,6 +25,7 @@ sealed class AppEvent {
 }
 
 data class AppState(
+    val currentFile: File? = null,
     val pageTitle: String = PAGES.MAIN_MENU,
     val login: String = "21",
     val password: String = "",

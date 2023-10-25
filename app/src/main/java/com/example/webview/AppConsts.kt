@@ -3,7 +3,7 @@ package com.example.webview
 object AppConsts {
     const val KB_URL = "https://kb.sibdigital.net/"
     const val KB_FOLDER = "KnowledgeBase"
-    const val GIT_FOLDER = "Git"
+    const val GIT_FOLDER = "Home"
     const val GET_REPO_URL_QUERY = """
         query {
           storage{
@@ -33,8 +33,4 @@ object PREFS_VALUES {
 object PAGES {
     const val MAIN_MENU = "Главная"
     const val SETTINGS = "Настройки"
-}
-
-object IGNORE_FILES {
-
 }

@@ -1,5 +1,6 @@
 package com.example.webview
 
+import android.app.FragmentBreadCrumbs
 import android.content.Context
 import android.content.SharedPreferences
 import android.os.Bundle
@@ -15,9 +16,11 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
@@ -27,6 +30,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.DrawerDefaults
+import androidx.compose.material3.DrawerState
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -35,6 +39,7 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -51,10 +56,12 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.Navigation
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -68,6 +75,8 @@ import com.example.webview.viewmodel.GitRepoEvent
 import com.example.webview.viewmodel.GitViewModel
 import com.example.webview.viewmodel.MarkdownViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import java.io.File
 
@@ -82,15 +91,23 @@ class MainActivity : ComponentActivity() {
         setContent {
             val appViewModel: AppViewModel = hiltViewModel()
             val navController = rememberNavController()
+
             val isLoading = remember { mutableStateOf(false) }
             val context = LocalContext.current
             val isThereNetworkConnection = remember { mutableStateOf(isOnline(context = context)) }
+
             val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+
+            val currentFile = remember { mutableStateOf("home") }
+            val currentFileExtension = remember { mutableStateOf("md") }
+
             val scope = rememberCoroutineScope()
+
             val prefs: SharedPreferences = context.getSharedPreferences(
                 PREFS,
                 MODE_PRIVATE
             )
+
             Scaffold(
                 topBar = {
                     TopAppBar(
@@ -127,10 +144,14 @@ class MainActivity : ComponentActivity() {
                             ModalDrawerSheet(
                                 modifier = Modifier.padding(padding)
                             ) {
-                                Text("Навигация", fontSize = 18.sp, modifier = drawerSheetPadding)
-                                Divider(Modifier.padding(vertical = 5.dp))
-                                DirectoryNavigation(context, initialDirectory = File("${context.filesDir}/${AppConsts.GIT_FOLDER}"))
-
+                                DirectoryNavigation(
+                                    context,
+                                    initialDirectory = File("${context.filesDir}/${AppConsts.GIT_FOLDER}"),
+                                    drawerState = drawerState,
+                                    coroutineScope = scope,
+                                    currentFile = currentFile,
+                                    currentFileExtension = currentFileExtension
+                                )
                             }
                         },
                         drawerState = drawerState,
@@ -142,12 +163,10 @@ class MainActivity : ComponentActivity() {
                                     isThereNetworkConnection = isThereNetworkConnection,
                                     context = context,
                                     prefs = prefs,
-                                    scaffoldPadding = padding
+                                    scaffoldPadding = padding,
+                                    currentFile = currentFile,
+                                    currentFileExtension = currentFileExtension
                                 )
-                                if (!isThereNetworkConnection.value) {
-                                    BackHandler(true) {
-                                    }
-                                }
                             }
                             composable("Settings_Screen") {
                                 Settings_Screen(
@@ -175,14 +194,14 @@ class MainActivity : ComponentActivity() {
     @Composable
     fun Main_Screen(
         isThereNetworkConnection: MutableState<Boolean>,
+        currentFile: MutableState<String>,
+        currentFileExtension: MutableState<String>,
         context: Context,
         prefs: SharedPreferences,
         scaffoldPadding: PaddingValues,
         gitViewModel: GitViewModel = hiltViewModel(),
         appViewModel: AppViewModel = hiltViewModel(),
     ) {
-        val currentFile = remember { mutableStateOf("home") }
-        val currentFileExtension = remember { mutableStateOf("md") }
 
         //Вызов один раз, для вызова при изменении чего-то - вместо Unit
         // указывается элемент за изменением которого необходимо следить
@@ -264,34 +283,67 @@ class MainActivity : ComponentActivity() {
     fun DirectoryNavigation(
         context: Context,
         initialDirectory: File,
+        drawerState: DrawerState,
+        coroutineScope: CoroutineScope,
+        currentFileExtension: MutableState<String>,
+        currentFile: MutableState<String>
     ) {
+
         var currentDirectory by remember { mutableStateOf(initialDirectory) }
-        val newFile = remember { mutableStateOf("")}
-        Log.i("File", newFile.value)
+        val breadcrumbs by remember { mutableStateOf(listOf(currentDirectory)) }
+        Divider()
+        LazyRow(
+            contentPadding = PaddingValues(horizontal = 6.dp),
+            modifier = Modifier.padding(vertical = 10.dp)
+        ) {
+            items(breadcrumbs) { crumb ->
+                Text(
+                    "${crumb.name}",
+                    fontSize = 18.sp,
+                    fontStyle = FontStyle.Italic,
+                    modifier = Modifier.clickable {
+                        currentDirectory = crumb
+                    })
+                Text(" / ", fontSize = 18.sp)
+            }
+        }
+        Divider()
         LazyColumn(
             contentPadding = PaddingValues(horizontal = 4.dp, vertical = 4.dp),
             content = {
-            items(currentDirectory.listFiles().orEmpty()) { file ->
-                when {
-                    file.isDirectory -> {
-                        ListItem(
-                            modifier = Modifier.clickable { currentDirectory = file  },
-                            headlineText = { Text(text = file.name) },
-                            trailingContent = { Icon(imageVector = Icons.Default.Home, contentDescription = null) },
-                        )
-                    }
-                    file.isFile -> {
-                        ListItem(
-                            modifier = Modifier.clickable { file.path },
-                            headlineText = { Text(text = file.name) },
-                            trailingContent = { Icon(imageVector = Icons.Default.Email, contentDescription = null) },
-                        )
+                items(currentDirectory.listFiles().orEmpty().sortedBy { !it.isDirectory }) { file ->
+                    when {
+                        file.isDirectory -> {
+                            ListItem(
+                                modifier = Modifier.clickable { currentDirectory = file },
+                                headlineText = { Text(text = file.name) },
+                                trailingContent = {
+                                    Icon(
+                                        imageVector = Icons.Default.Home,
+                                        contentDescription = null
+                                    )
+                                },
+                            )
+                        }
+
+                        file.isFile -> {
+                            ListItem(
+                                modifier = Modifier.clickable {
+                                    coroutineScope.launch {
+                                        drawerState.close()
+                                    }
+                                },
+                                headlineText = { Text(text = file.name) },
+                                trailingContent = {
+                                    Icon(
+                                        imageVector = Icons.Default.Email,
+                                        contentDescription = null
+                                    )
+                                },
+                            )
+                        }
                     }
                 }
-            }
-        })
+            })
     }
 }
-
-
-
