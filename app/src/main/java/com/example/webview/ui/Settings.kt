@@ -70,10 +70,12 @@ fun Settings_Screen(
             gitLogin = gitLogin,
             gitPassword = gitPassword,
             bearer = wikiJSBearer,
-            pref = pref
+            pref = pref,
+            isThereNetworkConnection = isThereNetworkConnection.value
         )
     }
 }
+
 val defaultPadding = PaddingValues(start = 15.dp, top = 10.dp)
 val textFieldModifier = Modifier
     .fillMaxWidth()
@@ -85,6 +87,7 @@ val buttonModifier = Modifier
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CredentialsCompose(
+    isThereNetworkConnection: Boolean,
     gitLogin: MutableState<String>,
     gitPassword: MutableState<String>,
     bearer: MutableState<String>,
@@ -139,9 +142,11 @@ fun CredentialsCompose(
             value = bearer.value,
             onValueChange = { letter -> bearer.value = letter }
         )
-        Column(horizontalAlignment = Alignment.End, modifier = Modifier
-            .fillMaxWidth()
-            .padding(end = 15.dp)) {
+        Column(
+            horizontalAlignment = Alignment.End, modifier = Modifier
+                .fillMaxWidth()
+                .padding(end = 15.dp)
+        ) {
             // Сохранить
             ButtonCompose(
                 onClick = {
@@ -156,27 +161,31 @@ fun CredentialsCompose(
                             context = context
                         )
                     )
-                }, modifier = buttonModifier.padding(top = 15.dp), label = "Сохранить"
+                }, modifier = buttonModifier.padding(top = 15.dp), label = "Сохранить", enabled = true
             )
             // Сохранить
             ButtonCompose(
                 onClick = {
                     clearGitRepo(context)
-                }, modifier = buttonModifier, label = "Очистить кэш"
+                }, modifier = buttonModifier, label = "Очистить кэш", enabled = true
             )
             // Гит клон
-            ButtonCompose(onClick = {
-                val repoUrl = gitViewModel.gitRepoState.gitRepoUrl
-                Log.i("Git", "Trying to clone with $repoUrl")
-                gitViewModel.onEvent(
-                    GitRepoEvent.GitClone(
-                        login = gitLogin.value,
-                        password = gitPassword.value,
-                        context = context,
-                        urlRepo = pref.getString(PREFS_VALUES.GIT_REPO_URL, "")!!
+            ButtonCompose(
+                onClick = {
+                    val repoUrl = gitViewModel.gitRepoState.gitRepoUrl
+                    Log.i("Git", "Trying to clone with $repoUrl")
+                    gitViewModel.onEvent(
+                        GitRepoEvent.GitClone(
+                            login = gitLogin.value,
+                            password = gitPassword.value,
+                            context = context,
+                            urlRepo = pref.getString(PREFS_VALUES.GIT_REPO_URL, "")!!
+                        )
                     )
-                )
-            }, modifier = buttonModifier, label = "Склонировать")
+                }, modifier = buttonModifier,
+                label = "Склонировать",
+                enabled = isThereNetworkConnection
+            )
             if (gitViewModel.gitRepoState.isGitClonePending) {
                 LinearProgressIndicator()
             }
@@ -188,7 +197,7 @@ fun CredentialsCompose(
                         context = context
                     )
                 )
-            }, modifier = buttonModifier, label = "Получить URL")
+            }, modifier = buttonModifier, label = "Получить URL", enabled = isThereNetworkConnection)
         }
     }
 }

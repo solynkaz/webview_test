@@ -8,8 +8,8 @@ import androidx.compose.ui.unit.sp
 
 
 @Composable
-fun ButtonCompose(onClick: () -> Unit, modifier: Modifier, label: String) {
-    Button(onClick = { onClick() }, modifier = modifier) {
+fun ButtonCompose(onClick: () -> Unit, modifier: Modifier, label: String, enabled: Boolean) {
+    Button(onClick = { onClick() }, modifier = modifier, enabled = enabled) {
         Text(label, fontSize = 12.sp)
     }
 }
