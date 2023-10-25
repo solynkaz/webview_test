@@ -27,7 +27,6 @@ import com.halilibo.richtext.markdown.Markdown
 import com.halilibo.richtext.ui.RichText
 
 //MarkDown Content
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MarkDownContent(
     currentFilePath: MutableState<String>,

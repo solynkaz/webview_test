@@ -34,3 +34,7 @@ object PAGES {
     const val MAIN_MENU = "Главная"
     const val SETTINGS = "Настройки"
 }
+
+object IGNORE_FILES {
+
+}
