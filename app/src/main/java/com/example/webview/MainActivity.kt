@@ -1,6 +1,5 @@
 package com.example.webview
 
-import android.app.FragmentBreadCrumbs
 import android.content.Context
 import android.content.SharedPreferences
 import android.os.Bundle
@@ -16,7 +15,6 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -26,10 +24,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
-import androidx.compose.material3.DrawerDefaults
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -39,12 +35,12 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
-import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDrawerState
+import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
@@ -61,7 +57,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.Navigation
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -69,14 +64,13 @@ import com.example.webview.PREFS_VALUES.PREFS
 import com.example.webview.controller.isOnline
 import com.example.webview.ui.MarkDownContent
 import com.example.webview.ui.Settings_Screen
+import com.example.webview.ui.components.DirectoryNavigation
 import com.example.webview.viewmodel.AppEvent
 import com.example.webview.viewmodel.AppViewModel
 import com.example.webview.viewmodel.GitRepoEvent
 import com.example.webview.viewmodel.GitViewModel
-import com.example.webview.viewmodel.MarkdownViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import java.io.File
 
@@ -89,17 +83,25 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
+
             val appViewModel: AppViewModel = hiltViewModel()
+            val gitViewModel: GitViewModel = hiltViewModel()
+
             val navController = rememberNavController()
 
             val isLoading = remember { mutableStateOf(false) }
             val context = LocalContext.current
             val isThereNetworkConnection = remember { mutableStateOf(isOnline(context = context)) }
 
-            val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+            LaunchedEffect(Unit) {
+                appViewModel.onEvent(
+                    AppEvent.LoadHome(
+                        context = context,
+                    )
+                )
+            }
 
-            val currentFile = remember { mutableStateOf("home") }
-            val currentFileExtension = remember { mutableStateOf("md") }
+            val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
 
             val scope = rememberCoroutineScope()
 
@@ -145,12 +147,9 @@ class MainActivity : ComponentActivity() {
                                 modifier = Modifier.padding(padding)
                             ) {
                                 DirectoryNavigation(
-                                    context,
-                                    initialDirectory = File("${context.filesDir}/${AppConsts.GIT_FOLDER}"),
                                     drawerState = drawerState,
                                     coroutineScope = scope,
-                                    currentFile = currentFile,
-                                    currentFileExtension = currentFileExtension
+                                    appViewModel = appViewModel
                                 )
                             }
                         },
@@ -164,8 +163,8 @@ class MainActivity : ComponentActivity() {
                                     context = context,
                                     prefs = prefs,
                                     scaffoldPadding = padding,
-                                    currentFile = currentFile,
-                                    currentFileExtension = currentFileExtension
+                                    gitViewModel = gitViewModel,
+                                    appViewModel = appViewModel
                                 )
                             }
                             composable("Settings_Screen") {
@@ -194,13 +193,11 @@ class MainActivity : ComponentActivity() {
     @Composable
     fun Main_Screen(
         isThereNetworkConnection: MutableState<Boolean>,
-        currentFile: MutableState<String>,
-        currentFileExtension: MutableState<String>,
         context: Context,
         prefs: SharedPreferences,
         scaffoldPadding: PaddingValues,
-        gitViewModel: GitViewModel = hiltViewModel(),
-        appViewModel: AppViewModel = hiltViewModel(),
+        gitViewModel: GitViewModel,
+        appViewModel: AppViewModel
     ) {
 
         //Вызов один раз, для вызова при изменении чего-то - вместо Unit
@@ -228,24 +225,31 @@ class MainActivity : ComponentActivity() {
                 .padding(scaffoldPadding)
         ) {
             if (isThereNetworkConnection.value) {
-                WebViewCompose(context = context, type = "web", scaffoldPadding)
+                WebViewCompose(context = context, type = "web", appViewModel = appViewModel, isThereNetworkConnection = isThereNetworkConnection)
             } else {
-                if (currentFileExtension.value == "md") {
-                    MarkDownContent(
-                        currentFileExtension = currentFileExtension,
-                        currentFilePath = currentFile
-                    )
-                } else if (currentFileExtension.value == "html") {
-                    WebViewCompose(context = context, type = "html", scaffoldPadding)
+                BackHandler {
+                    appViewModel.onEvent(AppEvent.HistoryBack(context))
                 }
+                if (appViewModel.appState.currentFile?.extension == "md") {
+                    MarkDownContent(
+                        appModel = appViewModel
+                    )
+                } else if (appViewModel.appState.currentFile?.extension == "html") {
+                    WebViewCompose(context = context, type = "html", appViewModel = appViewModel, isThereNetworkConnection = isThereNetworkConnection)
+                }
+
             }
         }
     }
 
     @Composable
-    fun WebViewCompose(context: Context, type: String, paddingValues: PaddingValues) {
-        val mdModel: MarkdownViewModel = hiltViewModel()
-        val data = remember { mutableStateOf(mdModel.mdState.data) }
+    fun WebViewCompose(
+        context: Context,
+        type: String,
+        isThereNetworkConnection: MutableState<Boolean>,
+        appViewModel: AppViewModel
+    ) {
+        val data = remember { mutableStateOf(appViewModel.appState.currentFileData) }
         val webView = remember {
             WebView(context).apply {
                 webViewClient = WebViewClient()
@@ -260,8 +264,12 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
-
         val webHistory: WebBackForwardList? by rememberUpdatedState(newValue = webView.copyBackForwardList())
+        if (isThereNetworkConnection.value) {
+            BackHandler(enabled = webHistory?.currentIndex != 0) {
+                webView.goBack()
+            }
+        }
         AndroidView(
             modifier = Modifier
                 .fillMaxSize(),
@@ -271,78 +279,6 @@ class MainActivity : ComponentActivity() {
                     it.loadUrl(AppConsts.KB_URL)
                 } else if (type == "html") {
                     it.loadDataWithBaseURL(null, data.value, "text/html", "UTF-8", null)
-                }
-            })
-        BackHandler(enabled = webHistory?.currentIndex != 0) {
-            webView.goBack()
-        }
-    }
-
-    @OptIn(ExperimentalMaterial3Api::class)
-    @Composable
-    fun DirectoryNavigation(
-        context: Context,
-        initialDirectory: File,
-        drawerState: DrawerState,
-        coroutineScope: CoroutineScope,
-        currentFileExtension: MutableState<String>,
-        currentFile: MutableState<String>
-    ) {
-
-        var currentDirectory by remember { mutableStateOf(initialDirectory) }
-        val breadcrumbs by remember { mutableStateOf(listOf(currentDirectory)) }
-        Divider()
-        LazyRow(
-            contentPadding = PaddingValues(horizontal = 6.dp),
-            modifier = Modifier.padding(vertical = 10.dp)
-        ) {
-            items(breadcrumbs) { crumb ->
-                Text(
-                    "${crumb.name}",
-                    fontSize = 18.sp,
-                    fontStyle = FontStyle.Italic,
-                    modifier = Modifier.clickable {
-                        currentDirectory = crumb
-                    })
-                Text(" / ", fontSize = 18.sp)
-            }
-        }
-        Divider()
-        LazyColumn(
-            contentPadding = PaddingValues(horizontal = 4.dp, vertical = 4.dp),
-            content = {
-                items(currentDirectory.listFiles().orEmpty().sortedBy { !it.isDirectory }) { file ->
-                    when {
-                        file.isDirectory -> {
-                            ListItem(
-                                modifier = Modifier.clickable { currentDirectory = file },
-                                headlineText = { Text(text = file.name) },
-                                trailingContent = {
-                                    Icon(
-                                        imageVector = Icons.Default.Home,
-                                        contentDescription = null
-                                    )
-                                },
-                            )
-                        }
-
-                        file.isFile -> {
-                            ListItem(
-                                modifier = Modifier.clickable {
-                                    coroutineScope.launch {
-                                        drawerState.close()
-                                    }
-                                },
-                                headlineText = { Text(text = file.name) },
-                                trailingContent = {
-                                    Icon(
-                                        imageVector = Icons.Default.Email,
-                                        contentDescription = null
-                                    )
-                                },
-                            )
-                        }
-                    }
                 }
             })
     }
