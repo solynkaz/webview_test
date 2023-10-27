@@ -2,36 +2,35 @@ package com.example.webview
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.net.ConnectivityManager
+import android.net.Network
 import android.os.Bundle
 import android.util.Log
 import android.webkit.ConsoleMessage
 import android.webkit.WebBackForwardList
 import android.webkit.WebChromeClient
+import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.ScrollState
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Divider
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
@@ -40,7 +39,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDrawerState
-import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
@@ -49,12 +47,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
@@ -65,14 +60,13 @@ import com.example.webview.controller.isOnline
 import com.example.webview.ui.MarkDownContent
 import com.example.webview.ui.Settings_Screen
 import com.example.webview.ui.components.DirectoryNavigation
+import com.example.webview.ui.components.WebViewCompose
 import com.example.webview.viewmodel.AppEvent
 import com.example.webview.viewmodel.AppViewModel
 import com.example.webview.viewmodel.GitRepoEvent
 import com.example.webview.viewmodel.GitViewModel
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import java.io.File
 
 
 val drawerSheetPadding = Modifier.padding(start = 5.dp)
@@ -83,7 +77,6 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-
             val appViewModel: AppViewModel = hiltViewModel()
             val gitViewModel: GitViewModel = hiltViewModel()
 
@@ -94,6 +87,15 @@ class MainActivity : ComponentActivity() {
             val isThereNetworkConnection = remember { mutableStateOf(isOnline(context = context)) }
 
             LaunchedEffect(Unit) {
+                val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+                connectivityManager.registerDefaultNetworkCallback(object : ConnectivityManager.NetworkCallback() {
+                    override fun onAvailable(network: Network) {
+                        isThereNetworkConnection.value = true
+                    }
+                    override fun onLost(network: Network) {
+                        isThereNetworkConnection.value = false
+                    }
+                })
                 appViewModel.onEvent(
                     AppEvent.LoadHome(
                         context = context,
@@ -164,7 +166,8 @@ class MainActivity : ComponentActivity() {
                                     prefs = prefs,
                                     scaffoldPadding = padding,
                                     gitViewModel = gitViewModel,
-                                    appViewModel = appViewModel
+                                    appViewModel = appViewModel,
+                                    drawerState = drawerState
                                 )
                             }
                             composable("Settings_Screen") {
@@ -190,6 +193,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     fun Main_Screen(
         isThereNetworkConnection: MutableState<Boolean>,
@@ -197,9 +201,11 @@ class MainActivity : ComponentActivity() {
         prefs: SharedPreferences,
         scaffoldPadding: PaddingValues,
         gitViewModel: GitViewModel,
-        appViewModel: AppViewModel
+        appViewModel: AppViewModel,
+        drawerState: DrawerState
     ) {
-
+        val localFilesSrollState = rememberScrollState()
+        val coroutineScope = rememberCoroutineScope()
         //Вызов один раз, для вызова при изменении чего-то - вместо Unit
         // указывается элемент за изменением которого необходимо следить
         LaunchedEffect(Unit) {
@@ -228,11 +234,16 @@ class MainActivity : ComponentActivity() {
                 WebViewCompose(context = context, type = "web", appViewModel = appViewModel, isThereNetworkConnection = isThereNetworkConnection)
             } else {
                 BackHandler {
-                    appViewModel.onEvent(AppEvent.HistoryBack(context))
+                    coroutineScope.launch {
+                        localFilesSrollState.animateScrollTo(0)
+                        appViewModel.onEvent(AppEvent.HistoryBack(context))
+                    }
                 }
                 if (appViewModel.appState.currentFile?.extension == "md") {
                     MarkDownContent(
-                        appModel = appViewModel
+                        appModel = appViewModel,
+                        scrollState = localFilesSrollState,
+                        drawerState = drawerState
                     )
                 } else if (appViewModel.appState.currentFile?.extension == "html") {
                     WebViewCompose(context = context, type = "html", appViewModel = appViewModel, isThereNetworkConnection = isThereNetworkConnection)
@@ -240,46 +251,5 @@ class MainActivity : ComponentActivity() {
 
             }
         }
-    }
-
-    @Composable
-    fun WebViewCompose(
-        context: Context,
-        type: String,
-        isThereNetworkConnection: MutableState<Boolean>,
-        appViewModel: AppViewModel
-    ) {
-        val data = remember { mutableStateOf(appViewModel.appState.currentFileData) }
-        val webView = remember {
-            WebView(context).apply {
-                webViewClient = WebViewClient()
-                settings.javaScriptEnabled = true
-                settings.useWideViewPort = true
-                settings.domStorageEnabled = true
-                webChromeClient = object : WebChromeClient() {
-                    override fun onConsoleMessage(consoleMessage: ConsoleMessage): Boolean {
-                        Log.d("WebViewDebug", "JavaScript Console: ${consoleMessage.message()}")
-                        return true
-                    }
-                }
-            }
-        }
-        val webHistory: WebBackForwardList? by rememberUpdatedState(newValue = webView.copyBackForwardList())
-        if (isThereNetworkConnection.value) {
-            BackHandler(enabled = webHistory?.currentIndex != 0) {
-                webView.goBack()
-            }
-        }
-        AndroidView(
-            modifier = Modifier
-                .fillMaxSize(),
-            factory = { webView },
-            update = {
-                if (type == "web") {
-                    it.loadUrl(AppConsts.KB_URL)
-                } else if (type == "html") {
-                    it.loadDataWithBaseURL(null, data.value, "text/html", "UTF-8", null)
-                }
-            })
     }
 }

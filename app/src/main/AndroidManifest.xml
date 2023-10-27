@@ -7,6 +7,7 @@
     <!--
     android:dataExtractionRules="@xml/data_extraction_rules"
     Для отправки запросов на localhost
+    TODO Удалить когда появится ключ до Wiki JS
     -->
 
     <application

@@ -1,15 +1,12 @@
 package com.example.webview.ui.components
 
-import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.Divider
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -18,12 +15,9 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -34,10 +28,13 @@ import com.example.webview.AppConsts
 import com.example.webview.R
 import com.example.webview.viewmodel.AppEvent
 import com.example.webview.viewmodel.AppViewModel
-import dagger.hilt.processor.internal.definecomponent.codegen._dagger_hilt_android_components_ActivityRetainedComponent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import java.io.File
+
+
+val dividerModifier = Modifier.height(2.dp).padding(horizontal = 12.dp)
+val notToDisplayFolders = listOf(".git")
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -85,7 +82,7 @@ fun DirectoryNavigation(
         content = {
             items(currentDirectory?.listFiles().orEmpty().sortedBy { !it.isDirectory }) { file ->
                 when {
-                    file.isDirectory -> {
+                    file.isDirectory && !notToDisplayFolders.contains(file.name) -> {
                         ListItem(
                             modifier = Modifier.clickable {
                                 appViewModel.onEvent(
@@ -103,8 +100,8 @@ fun DirectoryNavigation(
                                 )
                             },
                         )
+                        Divider(dividerModifier)
                     }
-
                     file.isFile -> {
                         if (file.extension == "md" || file.extension == "html") {
                             ListItem(
@@ -127,6 +124,7 @@ fun DirectoryNavigation(
                                     )
                                 },
                             )
+                            Divider(dividerModifier)
                         }
                     }
                 }

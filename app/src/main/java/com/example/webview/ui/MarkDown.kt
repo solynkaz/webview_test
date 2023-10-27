@@ -2,10 +2,11 @@ package com.example.webview.ui
 
 import android.util.Log
 import android.widget.Toast
-import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.DrawerState
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
@@ -19,12 +20,14 @@ import kotlinx.coroutines.launch
 import java.io.File
 
 //MarkDown Content
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MarkDownContent(
     appModel: AppViewModel,
+    scrollState: ScrollState,
+    drawerState: DrawerState
 ) {
     val context = LocalContext.current
-    val scrollState = rememberScrollState()
     val coroutineScope = rememberCoroutineScope()
     val data = appModel.appState.currentFileData
 
@@ -44,12 +47,21 @@ fun MarkDownContent(
                         val currentFile = findFile(appModel, link)
                         scrollState.animateScrollTo(0)
                         Log.i("MarkDown", "Link changed to $link")
-                        appModel.onEvent(
-                            AppEvent.LoadLocalFile(
-                                context = context,
-                                currentLocalFile = currentFile ?: File("")
-                            )
-                        )
+                        if (currentFile != null) {
+                            if (currentFile.isDirectory) {
+                                appModel.onEvent(AppEvent.ChangeDirectory(newDirectory = currentFile))
+                                drawerState.open()
+                            } else {
+                                appModel.onEvent(
+                                    AppEvent.LoadLocalFile(
+                                        context = context,
+                                        currentLocalFile = currentFile
+                                    )
+                                )
+                            }
+                        } else {
+                            // TODO Пустая страница, возможно создавать темп файл в appState со строкой "Нет данных для отображения" или т.п.?
+                        }
                     }
                 }
             })

@@ -84,7 +84,6 @@ fun LoginCompose(
                             )
                         )
                     }
-                    //TODO Проверка на валидность
                 }, modifier = Modifier
                     .fillMaxWidth()
                     .weight(0.8f)

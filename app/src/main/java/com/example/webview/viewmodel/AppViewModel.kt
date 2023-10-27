@@ -118,7 +118,7 @@ class AppViewModel @Inject constructor() : ViewModel() {
                         val data = readFileFromInternalStorage(
                             currentLocalFile = event.currentLocalFile
                         )
-                        if (!appState.isHistoryPopping) {
+                        if (!appState.isHistoryPopping && appState.history.size <= 6) {
                             appState.history.add(0, event.currentLocalFile)
                             Log.i(
                                 "History",
