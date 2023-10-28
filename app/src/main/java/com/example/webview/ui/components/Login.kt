@@ -80,7 +80,8 @@ fun LoginCompose(
                                 context = context,
                                 login = appViewModel.appState.login,
                                 password = appViewModel.appState.password,
-                                urlRepo = gitViewModel.gitRepoState.gitRepoUrl
+                                urlRepo = gitViewModel.gitRepoState.gitRepoUrl,
+                                appViewModel = appViewModel
                             )
                         )
                     }

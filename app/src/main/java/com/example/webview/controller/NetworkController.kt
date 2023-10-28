@@ -32,7 +32,7 @@ suspend fun getRepoURL(bearer: String, context: Context): Boolean {
     )
     try {
         val response = Gson().fromJson(
-            retrofit.postQuery(bearer, paramObject.toString()).body(),
+            retrofit.postQuery("Bearer $bearer", paramObject.toString()).body(),
             root::class.java
         )
         val target = response?.data?.storage?.targets?.find { it.title == "Git" }
@@ -64,7 +64,7 @@ suspend fun gitClone(context: Context, repoUrl: String, login: String, password:
                 .setCredentialsProvider(credentialsProvider)
             cloneCommand.call().close()
         }
-        Toast.makeText(context, "Git was cloned with success", Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, "База знаний успешно кэширована.", Toast.LENGTH_SHORT).show()
         return true
     } catch (ex: Exception) {
         Toast.makeText(context, "Git clone error", Toast.LENGTH_SHORT).show()

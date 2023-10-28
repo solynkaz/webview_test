@@ -13,6 +13,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
@@ -23,13 +24,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import com.example.webview.AppConsts
 import com.example.webview.viewmodel.AppViewModel
+import com.google.accompanist.web.WebView
+import com.google.accompanist.web.rememberWebViewState
 
 val offlineModifier = Modifier.fillMaxSize()
 
 @Composable
+@Deprecated("Сайдменю навигации не работает.")
 fun WebViewCompose(
     context: Context,
-    type: String,
     isThereNetworkConnection: MutableState<Boolean>,
     appViewModel: AppViewModel
 ) {
@@ -56,7 +59,8 @@ fun WebViewCompose(
             settings.disabledActionModeMenuItems = WebSettings.MENU_ITEM_NONE
             settings.mediaPlaybackRequiresUserGesture = true
             settings.setNeedInitialFocus(true)
-            settings.userAgentString = "Mozilla/5.0 (Linux; Android 13; M2101K7BNY Build/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/118.0.0.0 Mobile Safari/537.36"
+            settings.userAgentString =
+                "Mozilla/5.0 (Linux; Android 13; M2101K7BNY Build/TP1A.220624.014; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/118.0.0.0 Mobile Safari/537.36"
             webChromeClient = object :
                 WebChromeClient() {
                 override fun onConsoleMessage(consoleMessage: ConsoleMessage): Boolean {
@@ -84,10 +88,20 @@ fun WebViewCompose(
         factory = { webView },
         update = {
             Log.i("WebViewDebug", "Current URL:${it.url}")
-            if (type == "web") {
-                it.loadUrl(AppConsts.KB_URL)
-            } else if (type == "html") {
-                it.loadDataWithBaseURL(null, data.value, "text/html", "UTF-8", null)
-            }
+            it.loadDataWithBaseURL(null, data.value, "text/html", "UTF-8", null)
         })
+}
+
+@Composable
+fun WebViewHelper(
+) {
+    val state = rememberWebViewState("https://kb.sibdigital.net")
+    WebView(
+        modifier = Modifier.fillMaxSize(),
+        state = state,
+        onCreated = {
+            it.settings.javaScriptEnabled = true
+            it.settings.domStorageEnabled = true
+        }
+    )
 }

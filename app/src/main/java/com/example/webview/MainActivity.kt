@@ -35,6 +35,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -61,10 +62,13 @@ import com.example.webview.ui.MarkDownContent
 import com.example.webview.ui.Settings_Screen
 import com.example.webview.ui.components.DirectoryNavigation
 import com.example.webview.ui.components.WebViewCompose
+import com.example.webview.ui.components.WebViewHelper
 import com.example.webview.viewmodel.AppEvent
 import com.example.webview.viewmodel.AppViewModel
 import com.example.webview.viewmodel.GitRepoEvent
 import com.example.webview.viewmodel.GitViewModel
+import com.google.accompanist.web.WebView
+import com.google.accompanist.web.rememberWebViewState
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -82,16 +86,19 @@ class MainActivity : ComponentActivity() {
 
             val navController = rememberNavController()
 
-            val isLoading = remember { mutableStateOf(false) }
             val context = LocalContext.current
             val isThereNetworkConnection = remember { mutableStateOf(isOnline(context = context)) }
 
+            //Листенер интернета
             LaunchedEffect(Unit) {
-                val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-                connectivityManager.registerDefaultNetworkCallback(object : ConnectivityManager.NetworkCallback() {
+                val connectivityManager =
+                    context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+                connectivityManager.registerDefaultNetworkCallback(object :
+                    ConnectivityManager.NetworkCallback() {
                     override fun onAvailable(network: Network) {
                         isThereNetworkConnection.value = true
                     }
+
                     override fun onLost(network: Network) {
                         isThereNetworkConnection.value = false
                     }
@@ -107,89 +114,86 @@ class MainActivity : ComponentActivity() {
 
             val scope = rememberCoroutineScope()
 
-            val prefs: SharedPreferences = context.getSharedPreferences(
-                PREFS,
-                MODE_PRIVATE
-            )
-
-            Scaffold(
-                topBar = {
-                    TopAppBar(
-                        navigationIcon = {
-                            if (isLoading.value) {
-                                CircularProgressIndicator()
-                            }
-                        },
-                        title = { Text(appViewModel.appState.pageTitle) },
-                        colors = TopAppBarDefaults.smallTopAppBarColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer,
-                            titleContentColor = MaterialTheme.colorScheme.primary
-                        ),
-                        actions = {
-                            IconButton(onClick = {
-                                scope.launch {
-                                    navController.navigate("Settings_Screen") {
-                                        launchSingleTop = true
-                                    }
-                                    appViewModel.onEvent(AppEvent.ChangePageTitle(PAGES.SETTINGS))
+            Surface(Modifier.fillMaxSize()) {
+                Scaffold(
+                    topBar = {
+                        TopAppBar(
+                            title = { Text(appViewModel.appState.pageTitle) },
+                            colors = TopAppBarDefaults.smallTopAppBarColors(
+                                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                titleContentColor = MaterialTheme.colorScheme.primary
+                            ),
+                            actions = {
+                                if (gitViewModel.gitRepoState.isGitClonePending) {
+                                    CircularProgressIndicator()
                                 }
-                            }) {
-                                Icon(
-                                    imageVector = Icons.Filled.Settings,
-                                    contentDescription = "Settings"
-                                )
-                            }
-                        },
-                    )
-                },
-                content = { padding ->
-                    ModalNavigationDrawer(
-                        drawerContent = {
-                            ModalDrawerSheet(
-                                modifier = Modifier.padding(padding)
-                            ) {
-                                DirectoryNavigation(
-                                    drawerState = drawerState,
-                                    coroutineScope = scope,
-                                    appViewModel = appViewModel
-                                )
-                            }
-                        },
-                        drawerState = drawerState,
-                        gesturesEnabled = !isThereNetworkConnection.value
-                    ) {
-                        NavHost(navController = navController, startDestination = "Main_Screen") {
-                            composable("Main_Screen") {
-                                Main_Screen(
-                                    isThereNetworkConnection = isThereNetworkConnection,
-                                    context = context,
-                                    prefs = prefs,
-                                    scaffoldPadding = padding,
-                                    gitViewModel = gitViewModel,
-                                    appViewModel = appViewModel,
-                                    drawerState = drawerState
-                                )
-                            }
-                            composable("Settings_Screen") {
-                                Settings_Screen(
-                                    isThereNetworkConnection,
-                                    innerPaddingValues = padding,
-                                )
-                                BackHandler(true) {
+                                IconButton(onClick = {
                                     scope.launch {
-                                        appViewModel.onEvent(AppEvent.ChangePageTitle(PAGES.MAIN_MENU))
-                                        navController.popBackStack()
+                                        navController.navigate("Settings_Screen") {
+                                            launchSingleTop = true
+                                        }
+                                        appViewModel.onEvent(AppEvent.ChangePageTitle(PAGES.SETTINGS))
+                                    }
+                                }) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Settings,
+                                        contentDescription = "Settings"
+                                    )
+                                }
+                            },
+                        )
+                    },
+                    content = { padding ->
+                        ModalNavigationDrawer(
+                            drawerContent = {
+                                ModalDrawerSheet(
+                                    modifier = Modifier.padding(padding)
+                                ) {
+                                    DirectoryNavigation(
+                                        drawerState = drawerState,
+                                        coroutineScope = scope,
+                                        appViewModel = appViewModel
+                                    )
+                                }
+                            },
+                            drawerState = drawerState,
+                            gesturesEnabled = !isThereNetworkConnection.value
+                        ) {
+                            NavHost(
+                                navController = navController,
+                                startDestination = "Main_Screen"
+                            ) {
+                                composable("Main_Screen") {
+                                    Main_Screen(
+                                        isThereNetworkConnection = isThereNetworkConnection,
+                                        context = context,
+                                        scaffoldPadding = padding,
+                                        gitViewModel = gitViewModel,
+                                        appViewModel = appViewModel,
+                                        drawerState = drawerState
+                                    )
+                                }
+                                composable("Settings_Screen") {
+                                    Settings_Screen(
+                                        isThereNetworkConnection,
+                                        innerPaddingValues = padding,
+                                    )
+                                    BackHandler(true) {
+                                        scope.launch {
+                                            appViewModel.onEvent(AppEvent.ChangePageTitle(PAGES.MAIN_MENU))
+                                            navController.popBackStack()
+                                        }
                                     }
                                 }
                             }
                         }
-                    }
-                },
-                modifier = Modifier
-                    .padding(1.dp)
-                    .fillMaxSize()
-            )
+                    },
+                    modifier = Modifier
+                        .padding(1.dp)
+                        .fillMaxSize()
+                )
 
+            }
         }
     }
 
@@ -198,7 +202,6 @@ class MainActivity : ComponentActivity() {
     fun Main_Screen(
         isThereNetworkConnection: MutableState<Boolean>,
         context: Context,
-        prefs: SharedPreferences,
         scaffoldPadding: PaddingValues,
         gitViewModel: GitViewModel,
         appViewModel: AppViewModel,
@@ -206,24 +209,53 @@ class MainActivity : ComponentActivity() {
     ) {
         val localFilesSrollState = rememberScrollState()
         val coroutineScope = rememberCoroutineScope()
-        //Вызов один раз, для вызова при изменении чего-то - вместо Unit
-        // указывается элемент за изменением которого необходимо следить
         LaunchedEffect(Unit) {
-            val appState = appViewModel.appState
-            gitViewModel.onEvent(
-                GitRepoEvent.GetRepoUrl(
-                    bearer = appState.bearer,
-                    context = context
+            appViewModel.onEvent(AppEvent.LoadSettings(context))
+            if (appViewModel.appState.bearer != "" && gitViewModel.gitRepoState.gitRepoUrl == "") {
+                gitViewModel.onEvent(
+                    GitRepoEvent.GetRepoUrl(
+                        bearer = appViewModel.appState.bearer,
+                        context = context,
+                        appViewModel = appViewModel
+                    )
                 )
-            )
-            appViewModel.onEvent(AppEvent.LoadSettings(prefs = prefs))
-            gitViewModel.onEvent(
-                GitRepoEvent.GitFetch(
-                    login = appState.login,
-                    password = appState.password,
-                    context = context
-                )
-            )
+            }
+        }
+        if (!gitViewModel.gitRepoState.isGetRepoUrlPending) {
+            LaunchedEffect(Unit) {
+                //Попытка клонировать репо
+                if (!appViewModel.appState.isGitCloned && checkSettings(
+                        appViewModel,
+                        gitViewModel
+                    )
+                ) {
+                    if (!gitViewModel.gitRepoState.isGitClonePending) {
+                        gitViewModel.onEvent(
+                            GitRepoEvent.GitClone(
+                                context = context,
+                                login = appViewModel.appState.login,
+                                password = appViewModel.appState.password,
+                                urlRepo = gitViewModel.gitRepoState.gitRepoUrl,
+                                appViewModel = appViewModel
+                            )
+                        )
+                    }
+                }
+                if (appViewModel.appState.isGitCloned && !gitViewModel.gitRepoState.isGitFetchPending && checkSettings(
+                        appViewModel,
+                        gitViewModel
+                    )
+                ) {
+                    //Попытка сделать fetch репозитория
+                    gitViewModel.onEvent(
+                        GitRepoEvent.GitFetch(
+                            login = appViewModel.appState.login,
+                            password = appViewModel.appState.password,
+                            context = context
+                        )
+                    )
+                }
+            }
         }
         Box(
             Modifier
@@ -231,7 +263,7 @@ class MainActivity : ComponentActivity() {
                 .padding(scaffoldPadding)
         ) {
             if (isThereNetworkConnection.value) {
-                WebViewCompose(context = context, type = "web", appViewModel = appViewModel, isThereNetworkConnection = isThereNetworkConnection)
+                WebViewHelper()
             } else {
                 BackHandler {
                     coroutineScope.launch {
@@ -246,10 +278,23 @@ class MainActivity : ComponentActivity() {
                         drawerState = drawerState
                     )
                 } else if (appViewModel.appState.currentFile?.extension == "html") {
-                    WebViewCompose(context = context, type = "html", appViewModel = appViewModel, isThereNetworkConnection = isThereNetworkConnection)
+                    WebViewCompose(
+                        context = context,
+                        appViewModel = appViewModel,
+                        isThereNetworkConnection = isThereNetworkConnection
+                    )
                 }
-
+// Проверить автоматическое клонирование в фоне при запуске приложения
             }
         }
+    }
+
+    private fun checkSettings(appViewModel: AppViewModel, gitViewModel: GitViewModel): Boolean {
+        val appState = appViewModel.appState
+        val gitState = gitViewModel.gitRepoState
+
+        return appState.login != "" &&
+                appState.password != "" &&
+                gitState.gitRepoUrl != ""
     }
 }

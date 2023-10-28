@@ -1,7 +1,7 @@
 package com.example.webview
 
 object AppConsts {
-    const val KB_URL = "http://192.168.0.34:3000/"
+    const val KB_URL = "https://kb.sibdigital.net/"
     const val KB_FOLDER = "KnowledgeBase"
     const val GIT_FOLDER = "Home"
     const val GET_REPO_URL_QUERY = """

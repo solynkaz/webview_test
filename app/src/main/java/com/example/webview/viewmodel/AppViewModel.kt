@@ -19,7 +19,7 @@ import java.io.File
 import javax.inject.Inject
 
 sealed class AppEvent {
-    data class LoadSettings(val prefs: SharedPreferences) : AppEvent()
+    data class LoadSettings(val context: Context) : AppEvent()
     data class SaveSettings(val settingsMap: Map<String, String>, val context: Context) : AppEvent()
     data class LoadLocalFile(
         val currentLocalFile: File,
@@ -42,6 +42,7 @@ data class AppState(
     val currentFile: File? = null,
     val currentFileData: String = "",
     val currentDirectory: File? = null,
+    val isGitCloned: Boolean = false,
     val history: MutableList<File?> = mutableListOf(),
     val isHistoryPopping: Boolean = false,
     val commonPath: String = "",
@@ -60,13 +61,19 @@ class AppViewModel @Inject constructor() : ViewModel() {
     fun onEvent(event: AppEvent) {
         when (event) {
             is AppEvent.LoadSettings -> {
-                val login = event.prefs.getString(PREFS_VALUES.GIT_LOGIN, "")
-                val pass = event.prefs.getString(PREFS_VALUES.GIT_PASS, "")
-                val bearer = event.prefs.getString(PREFS_VALUES.WIKI_JS_BEARER, "")
+                val prefs: SharedPreferences = event.context.getSharedPreferences(
+                    PREFS,
+                    ComponentActivity.MODE_PRIVATE
+                )
+                val login = prefs.getString(PREFS_VALUES.GIT_LOGIN, "")
+                val pass = prefs.getString(PREFS_VALUES.GIT_PASS, "")
+                val bearer = prefs.getString(PREFS_VALUES.WIKI_JS_BEARER, "")
+                val isGitCloned = prefs.getBoolean(PREFS_VALUES.IS_REPO_CLONED, false)
                 appState = appState.copy(
                     login = login!!,
                     password = pass!!,
-                    bearer = bearer!!
+                    bearer = bearer!!,
+                    isGitCloned = isGitCloned
                 )
             }
 
@@ -133,8 +140,6 @@ class AppViewModel @Inject constructor() : ViewModel() {
                         )
                     } catch (ex: Exception) {
                         appState = appState.copy(currentFileData = AppConsts.EMPTY_MD_STRING)
-                        Toast.makeText(event.context, "Ссылка недоступна", Toast.LENGTH_SHORT)
-                            .show()
                         Log.e("File system", ex.toString())
                     }
                 }

@@ -37,8 +37,6 @@ import com.example.webview.viewmodel.GitViewModel
 @Composable
 fun Settings_Screen(
     isThereNetworkConnection: MutableState<Boolean>,
-    gitViewModel: GitViewModel = hiltViewModel(),
-    appViewModel: AppViewModel = hiltViewModel(),
     innerPaddingValues: PaddingValues
 ) {
     val wikiJSBearer = remember { mutableStateOf("") }
@@ -163,35 +161,6 @@ fun CredentialsCompose(
                     clearGitRepo(context)
                 }, modifier = buttonModifier, label = "Очистить кэш", enabled = true
             )
-            // Гит клон
-            ButtonCompose(
-                onClick = {
-                    val repoUrl = gitViewModel.gitRepoState.gitRepoUrl
-                    Log.i("Git", "Trying to clone with $repoUrl")
-                    gitViewModel.onEvent(
-                        GitRepoEvent.GitClone(
-                            login = gitLogin.value,
-                            password = gitPassword.value,
-                            context = context,
-                            urlRepo = pref.getString(PREFS_VALUES.GIT_REPO_URL, "")!!
-                        )
-                    )
-                }, modifier = buttonModifier,
-                label = "Склонировать",
-                enabled = isThereNetworkConnection
-            )
-            if (gitViewModel.gitRepoState.isGitClonePending) {
-                LinearProgressIndicator()
-            }
-            // Гит клон
-            ButtonCompose(onClick = {
-                gitViewModel.onEvent(
-                    GitRepoEvent.GetRepoUrl(
-                        bearer = appViewModel.appState.bearer,
-                        context = context
-                    )
-                )
-            }, modifier = buttonModifier, label = "Получить URL", enabled = isThereNetworkConnection)
         }
     }
 }
