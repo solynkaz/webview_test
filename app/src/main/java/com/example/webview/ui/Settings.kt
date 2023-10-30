@@ -1,7 +1,6 @@
 package com.example.webview.ui
 
 import android.content.SharedPreferences
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -9,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -31,7 +29,6 @@ import com.example.webview.ui.components.ButtonCompose
 import com.example.webview.ui.components.DividerCompose
 import com.example.webview.viewmodel.AppEvent
 import com.example.webview.viewmodel.AppViewModel
-import com.example.webview.viewmodel.GitRepoEvent
 import com.example.webview.viewmodel.GitViewModel
 
 @Composable

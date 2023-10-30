@@ -55,7 +55,6 @@ dependencies {
     //Работающий WebView
     implementation("com.google.accompanist:accompanist-webview:0.33.2-alpha")
 
-
     //Navigation
     implementation ("androidx.navigation:navigation-compose:2.7.4")
 
