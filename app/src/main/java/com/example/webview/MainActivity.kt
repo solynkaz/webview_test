@@ -91,6 +91,7 @@ class MainActivity : ComponentActivity() {
                         context = context,
                     )
                 )
+                gitViewModel.onEvent(GitRepoEvent.LoadGitSettings(context))
             }
 
             val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)

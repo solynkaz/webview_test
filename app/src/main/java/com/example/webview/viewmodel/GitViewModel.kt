@@ -42,7 +42,7 @@ sealed class GitRepoEvent {
         val appViewModel: AppViewModel
     ) : GitRepoEvent()
 
-    data class LoadGitSettings(val prefs: SharedPreferences) : GitRepoEvent()
+    data class LoadGitSettings(val context: Context) : GitRepoEvent()
 }
 
 data class GitRepoState(
@@ -110,11 +110,15 @@ class GitViewModel @Inject constructor() : ViewModel() {
             }
 
             is GitRepoEvent.LoadGitSettings -> {
+                val prefs: SharedPreferences = event.context.getSharedPreferences(
+                    PREFS,
+                    ComponentActivity.MODE_PRIVATE
+                )
                 Log.i("Git", "Loading settings...")
-                val repoUrl = event.prefs.getString(PREFS_VALUES.GIT_REPO_URL, "")
-                Log.i("Git", "Putting $repoUrl into state")
+                val repoUrl = prefs.getString(PREFS_VALUES.GIT_REPO_URL, "")
+                val isGitCloned = prefs.getBoolean(PREFS_VALUES.IS_REPO_CLONED, false)
                 gitRepoState =
-                    gitRepoState.copy(gitRepoUrl = repoUrl!!)
+                    gitRepoState.copy(gitRepoUrl = repoUrl!!, isGitCloneLoaded = isGitCloned)
                 Log.i("Git", "Settings loaded")
             }
         }
@@ -163,18 +167,23 @@ class GitViewModel @Inject constructor() : ViewModel() {
     private suspend fun doGitFetch(context: Context, login: String, password: String) {
         gitRepoState = gitRepoState.copy(isGitFetchPending = true)
         if (gitRepoState.isGitCloneLoaded && gitRepoState.gitRepoUrl != "") {
-            gitFetch(
-                context = context,
-                repoUrl = gitRepoState.gitRepoUrl,
-                login = login,
-                password = password
-            )
-            gitRepoState =
-                gitRepoState.copy(isGitFetched = true, isGitFetchPending = false)
+            try {
+                gitFetch(
+                    context = context,
+                    repoUrl = gitRepoState.gitRepoUrl,
+                    login = login,
+                    password = password
+                )
+                gitRepoState =
+                    gitRepoState.copy(isGitFetched = true, isGitFetchPending = false)
+                Log.i("Git", "Git repo fetched.")
+            } catch (ex: Exception) {
+                Log.e("Git", "Error while fetching")
+            }
         } else {
             Log.i(
                 "Git",
-                "Unable to fetch, theres no repository or repo url is invalid."
+                "Unable to fetch, theres no repository or repo url is invalid. Local repo: ${gitRepoState.gitRepoUrl}"
             )
         }
         gitRepoState = gitRepoState.copy(isGitUpdated = true)

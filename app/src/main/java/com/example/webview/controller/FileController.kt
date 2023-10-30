@@ -1,8 +1,11 @@
 package com.example.webview.controller
 
 import android.content.Context
+import android.content.SharedPreferences
 import android.util.Log
+import androidx.activity.ComponentActivity
 import com.example.webview.AppConsts
+import com.example.webview.PREFS_VALUES
 import java.io.File
 
 fun readFileFromInternalStorage(currentLocalFile: File): String {
@@ -16,6 +19,11 @@ fun clearGitRepo(context: Context) {
     val filePath = "${context.filesDir}/${AppConsts.GIT_FOLDER}";
     val repo = File(filePath)
     repo.deleteRecursively()
+    val prefs: SharedPreferences = context.getSharedPreferences(
+        PREFS_VALUES.PREFS,
+        ComponentActivity.MODE_PRIVATE
+    )
+    prefs.edit().putBoolean(PREFS_VALUES.IS_REPO_CLONED, true).apply()
     Log.i("Git", "Cache cleared.")
 }
 
