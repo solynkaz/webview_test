@@ -12,6 +12,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.example.webview.AppConsts
 import com.example.webview.viewmodel.AppEvent
 import com.example.webview.viewmodel.AppViewModel
 import com.halilibo.richtext.markdown.Markdown
@@ -60,7 +61,7 @@ fun MarkDownContent(
                                 )
                             }
                         } else {
-                            // TODO Пустая страница, возможно создавать темп файл в appState со строкой "Нет данных для отображения" или т.п.?
+                            appModel.onEvent(AppEvent.SetData(AppConsts.EMPTY_MD_STRING))
                         }
                     }
                 }

@@ -36,6 +36,7 @@ sealed class AppEvent {
 
     data class Login(val login: String, val password: String) : AppEvent()
     data class ChangePageTitle(val title: String) : AppEvent()
+    data class SetData(val data: String): AppEvent()
 }
 
 data class AppState(
@@ -95,7 +96,6 @@ class AppViewModel @Inject constructor() : ViewModel() {
             }
 
             is AppEvent.Login -> {
-                // TODO Авторизация на апи гитлаба
                 appState = appState.copy(
                     login = event.login,
                     password = event.password
@@ -143,6 +143,10 @@ class AppViewModel @Inject constructor() : ViewModel() {
                         Log.e("File system", ex.toString())
                     }
                 }
+            }
+
+            is AppEvent.SetData -> {
+                appState = appState.copy(currentFileData = event.data)
             }
 
             is AppEvent.HistoryBack -> {

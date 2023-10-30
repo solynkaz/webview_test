@@ -271,7 +271,7 @@ class MainActivity : ComponentActivity() {
                         appViewModel.onEvent(AppEvent.HistoryBack(context))
                     }
                 }
-                if (appViewModel.appState.currentFile?.extension == "md") {
+                if (appViewModel.appState.currentFile?.extension == "md" || appViewModel.appState.currentFile == null) {
                     MarkDownContent(
                         appModel = appViewModel,
                         scrollState = localFilesSrollState,
